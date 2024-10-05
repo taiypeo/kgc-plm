@@ -18,7 +18,7 @@ def cli() -> None:
 @click.option("--dataset-batch-size", default=1000, help="Batch size for dataset mapping operations")
 @click.option("--embedding-batch-size", default=32, help="Batch size for embeddings")
 @click.option("--cache-dir", default="cache", help="Cache directory path")
-@click.argument("output_path", help="Where to store the resulting candidates JSON file")
+@click.argument("output-path", help="Where to store the resulting candidates JSON file")
 def _filter_candidates(
     graph_name: str,
     embedding_method: str,

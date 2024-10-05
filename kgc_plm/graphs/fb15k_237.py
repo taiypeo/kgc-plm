@@ -52,7 +52,8 @@ class FB15K_237:
         mid2description_path = hf_hub_download(
             repo_id="KGraph/FB15k-237",
             filename="data/FB15k_mid2description.txt",
-            repo_type="dataset"
+            repo_type="dataset",
+            cache_dir=cache_dir,
         )
         mid2description = {}
         with open(mid2description_path) as file:

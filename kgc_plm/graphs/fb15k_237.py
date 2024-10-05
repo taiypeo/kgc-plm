@@ -1,18 +1,32 @@
-from datasets import load_dataset
+from datasets import DatasetDict, load_dataset
 from huggingface_hub import hf_hub_download
 
+from .base import BaseGraph
 
-class FB15K_237:
+
+class FB15K_237(BaseGraph):
     def __init__(self, batch_size: int = 1000, cache_dir: str = "cache") -> None:
         relations_dataset = load_dataset("KGraph/FB15k-237", cache_dir=cache_dir)
-        self.relations_dataset = relations_dataset.map(
+        self._relations_dataset = relations_dataset.map(
             FB15K_237._transform_relations_dataset,
             batched=True,
             batch_size=batch_size,
         ).remove_columns("text")
 
-        self.entityid_to_name = FB15K_237._load_mid2name(cache_dir)
-        self.entityid_to_description = FB15K_237._load_mid2description(cache_dir)
+        self._entityid_to_name = FB15K_237._load_mid2name(cache_dir)
+        self._entityid_to_description = FB15K_237._load_mid2description(cache_dir)
+
+
+    @property
+    def relations(self) -> DatasetDict:
+        return self._relations_dataset
+
+
+    @property
+    def entity_id_to_text(self) -> dict[str, str]:
+        # Descriptions seem to already contain the entity names
+        # in some shape or form, so we can try using only them.
+        return self._entityid_to_description
 
 
     @staticmethod

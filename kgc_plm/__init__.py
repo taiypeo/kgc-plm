@@ -37,6 +37,7 @@ def filter_candidates(
     # TODO: account for relations?
     # TODO: add GPU support?
     # TODO: speed up search by using a different index type?
+    # TODO: exclude known relations?
     _, neighbor_indices = vector_index.search(embeddings, top_k)
 
     candidates = {}

@@ -13,3 +13,13 @@ class BaseGraph(ABC):
     @abstractmethod
     def entity_id_to_text(self) -> dict[str, str]:
         ...
+
+    @property
+    @abstractmethod
+    def entity_ids(self) -> list[str]:
+        ...
+
+    @property
+    @abstractmethod
+    def texts(self) -> list[str]:
+        ...

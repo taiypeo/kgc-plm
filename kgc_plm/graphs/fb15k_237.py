@@ -16,6 +16,12 @@ class FB15K_237(BaseGraph):
         self._entityid_to_name = FB15K_237._load_mid2name(cache_dir)
         self._entityid_to_description = FB15K_237._load_mid2description(cache_dir)
 
+        self._entityids = []
+        self._descriptions = []
+        for entity_id, description in self._entityid_to_description:
+            self._entityids.append(entity_id)
+            self._descriptions.append(description)
+
 
     @property
     def relations(self) -> DatasetDict:
@@ -27,6 +33,14 @@ class FB15K_237(BaseGraph):
         # Descriptions seem to already contain the entity names
         # in some shape or form, so we can try using only them.
         return self._entityid_to_description
+
+    @property
+    def entity_ids(self) -> list[str]:
+        return self._entityids
+
+    @property
+    def texts(self) -> list[str]:
+        return self._descriptions
 
 
     @staticmethod

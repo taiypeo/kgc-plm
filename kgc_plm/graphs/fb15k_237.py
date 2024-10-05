@@ -1,0 +1,64 @@
+from datasets import load_dataset
+from huggingface_hub import hf_hub_download
+
+
+class FB15K_237:
+    def __init__(self, batch_size: int = 1000, cache_dir: str = "cache") -> None:
+        relations_dataset = load_dataset("KGraph/FB15k-237", cache_dir=cache_dir)
+        self.relations_dataset = relations_dataset.map(
+            FB15K_237._transform_relations_dataset,
+            batched=True,
+            batch_size=batch_size,
+        ).remove_columns("text")
+
+        self.entityid_to_name = FB15K_237._load_mid2name(cache_dir)
+        self.entityid_to_description = FB15K_237._load_mid2description(cache_dir)
+
+
+    @staticmethod
+    def _transform_relations_dataset(items: list[str]) -> dict[str, list[str]]:
+        result = {
+            "head": [],
+            "relation": [],
+            "tail": [],
+        }
+        for item in items["text"]:
+            head_id, relation, tail_id = item.split("\t")
+            result["head"].append(head_id)
+            result["relation"].append(relation)
+            result["tail"].append(tail_id)
+        return result
+
+
+    @staticmethod
+    def _load_mid2name(cache_dir: str) -> dict[str, str]:
+        mid2name_path = hf_hub_download(
+            repo_id="KGraph/FB15k-237",
+            filename="data/FB15k_mid2name.txt",
+            repo_type="dataset",
+            cache_dir=cache_dir
+        )
+        mid2name = {}
+        with open(mid2name_path) as file:
+            for line in file:
+                entity_id, entity_name = line.strip().split("\t")
+                mid2name[entity_id] = entity_name
+
+        return mid2name
+
+
+    @staticmethod
+    def _load_mid2description(cache_dir: str) -> dict[str, str]:
+        mid2description_path = hf_hub_download(
+            repo_id="KGraph/FB15k-237",
+            filename="data/FB15k_mid2description.txt",
+            repo_type="dataset"
+        )
+        mid2description = {}
+        with open(mid2description_path) as file:
+            for line in file:
+                entity_id, entity_description = line.strip().split("\t")
+                entity_description = entity_description[1:-len("\"@en")]
+                mid2description[entity_id] = entity_description
+
+        return mid2description

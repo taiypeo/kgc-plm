@@ -26,7 +26,7 @@ def _filter_candidates(
     top_k: int,
     dataset_batch_size: int,
     embedding_batch_size: int,
-    cache_dir: int,
+    cache_dir: str,
     output_path: str,
 ):
     candidates = filter_candidates(

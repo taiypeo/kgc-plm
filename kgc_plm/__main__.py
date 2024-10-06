@@ -7,11 +7,11 @@ from .filtration import filter_candidates_sbert, train_tucker
 
 
 @click.group()
-def cli() -> None:
+def filtration() -> None:
     pass
 
 
-@cli.command("train-tucker")
+@filtration.command("train-tucker")
 @click.option("--graph-name", default="fb15k_237", help="Graph to train on")
 @click.option("--dataset-batch-size", default=1000, help="Batch size for dataset mapping operations")
 @click.option("--learning_rate", default=0.0005)
@@ -63,7 +63,7 @@ def _train_tucker(
     torch.save(model.state_dict(), output_path)
 
 
-@cli.command("filter-candidates-sbert")
+@filtration.command("filter-candidates-sbert")
 @click.option("--graph-name", default="fb15k_237", help="Graph to filter candidates for")
 @click.option("--sbert-model", default="all-mpnet-base-v2", help="SBERT model")
 @click.option("--top-k", default=100, help="How many candidates to search for")
@@ -91,6 +91,8 @@ def _filter_candidates_sbert(
     with open(output_path, "w") as file:
         json.dump(candidates, file)
 
+
+cli = click.CommandCollection(sources=[filtration])
 
 if __name__ == "__main__":
     cli()

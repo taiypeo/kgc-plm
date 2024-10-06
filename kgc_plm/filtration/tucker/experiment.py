@@ -92,7 +92,9 @@ class TuckERExperiment:
         print("Number of data points: %d" % len(test_data_idxs))
 
         for i in range(0, len(test_data_idxs), self.batch_size):
-            data_batch, _ = self.get_batch(er_vocab, test_data_idxs, i, len(graph.entity_ids))
+            data_batch, _ = self.get_batch(
+                er_vocab, test_data_idxs, i, len(graph.entity_ids)
+            )
             e1_idx = torch.tensor(data_batch[:, 0])
             r_idx = torch.tensor(data_batch[:, 1])
             e2_idx = torch.tensor(data_batch[:, 2])

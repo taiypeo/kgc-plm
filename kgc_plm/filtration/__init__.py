@@ -1,7 +1,41 @@
 import faiss
 
 from .sbert import embed_sbert
+from .tucker import TuckER, TuckERExperiment
 from ..graphs import get_graph
+
+
+def train_tucker(
+    graph_name: str,
+    dataset_batch_size: int,
+    learning_rate: float,
+    ent_vec_dim: int,
+    rel_vec_dim: int,
+    num_iterations: int,
+    batch_size: int,
+    decay_rate: float,
+    cuda: bool,
+    input_dropout: float,
+    hidden_dropout1: float,
+    hidden_dropout2: float,
+    label_smoothing: float,
+    cache_dir: str,
+) -> TuckER:
+    graph = get_graph(graph_name, dataset_batch_size, cache_dir)
+    experiment = TuckERExperiment(
+        learning_rate,
+        ent_vec_dim,
+        rel_vec_dim,
+        num_iterations,
+        batch_size,
+        decay_rate,
+        cuda,
+        input_dropout,
+        hidden_dropout1,
+        hidden_dropout2,
+        label_smoothing,
+    )
+    return experiment.train_and_eval(graph)
 
 
 def filter_candidates_sbert(

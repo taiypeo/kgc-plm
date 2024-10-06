@@ -56,7 +56,7 @@ class TuckERExperiment:
         er_vocab = defaultdict(list)
         for triple in data:
             er_vocab[(triple[0], triple[1])].append(triple[2])
-        return er_vocab
+        return dict(er_vocab)
 
     def get_batch(
         self,
@@ -75,8 +75,8 @@ class TuckERExperiment:
         return np.array(batch), targets
 
     def evaluate(self, model: TuckER, graph: BaseGraph, data: Dataset) -> None:
-        hits = []
-        ranks = []
+        hits: list[float] = []
+        ranks: list[int] = []
         for i in range(10):
             hits.append([])
 

@@ -75,8 +75,8 @@ class TuckERExperiment:
         return np.array(batch), targets
 
     def evaluate(self, model: TuckER, graph: BaseGraph, data: Dataset) -> None:
-        hits: list[float] = []
-        ranks: list[int] = []
+        hits = []
+        ranks = []
         for i in range(10):
             hits.append([])
 

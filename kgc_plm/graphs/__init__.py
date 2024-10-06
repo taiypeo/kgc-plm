@@ -14,5 +14,5 @@ def get_graph(
             cache_dir=cache_dir,
             **kwargs,
         )
-    else:
-        raise ValueError(f"Unknown graph: {graph_name}")
+
+    raise ValueError(f"Unknown graph: {graph_name}")

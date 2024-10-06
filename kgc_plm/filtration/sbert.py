@@ -1,7 +1,7 @@
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
-from ...graphs import BaseGraph
+from ..graphs import BaseGraph
 
 
 def embed_sbert(

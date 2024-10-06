@@ -1,17 +1,21 @@
-from datasets import DatasetDict, load_dataset
+from datasets import DatasetDict, concatenate_datasets, load_dataset
 from huggingface_hub import hf_hub_download
 
 from .base import BaseGraph
 
 
 class FB15K_237(BaseGraph):
-    def __init__(self, batch_size: int = 1000, cache_dir: str = "cache") -> None:
-        relations_dataset = load_dataset("KGraph/FB15k-237", cache_dir=cache_dir)
-        self._triplets_dataset = relations_dataset.map(
-            FB15K_237._transform_triplets_dataset,
-            batched=True,
+    def __init__(
+            self,
+            batch_size: int = 1000,
+            add_reverse_relations: bool = False,
+            cache_dir: str = "cache"
+        ) -> None:
+        self._triplets_dataset = FB15K_237._load_triplets_dataset(
             batch_size=batch_size,
-        ).remove_columns("text")
+            add_reverse_relations=add_reverse_relations,
+            cache_dir=cache_dir,
+        )
 
         self._entityid_to_name = FB15K_237._load_mid2name(cache_dir)
         self._entityid_to_description = FB15K_237._load_mid2description(cache_dir)
@@ -57,7 +61,35 @@ class FB15K_237(BaseGraph):
 
 
     @staticmethod
-    def _transform_triplets_dataset(items: list[str]) -> dict[str, list[str]]:
+    def _load_triplets_dataset(
+        batch_size: int,
+        add_reverse_relations: bool,
+        cache_dir: str
+    ) -> DatasetDict:
+        triplets_dataset = load_dataset("KGraph/FB15k-237", cache_dir=cache_dir)
+        result = triplets_dataset.map(
+            lambda items: FB15K_237._transform_triplets_dataset(items=items, invert_triplets=False),
+            batched=True,
+            batch_size=batch_size,
+        ).remove_columns("text")
+        if add_reverse_relations:
+            inverted_triplets_dataset = triplets_dataset.map(
+                lambda items: FB15K_237._transform_triplets_dataset(items=items, invert_triplets=True),
+                batched=True,
+                batch_size=batch_size,
+            ).remove_columns("text")
+            result = DatasetDict({
+                split_name: concatenate_datasets([
+                    result[split_name],
+                    inverted_triplets_dataset[split_name],
+                ])
+                for split_name in result
+            })
+
+        return result
+
+    @staticmethod
+    def _transform_triplets_dataset(items: list[str], invert_triplets: bool) -> dict[str, list[str]]:
         result = {
             "head": [],
             "relation": [],
@@ -65,9 +97,15 @@ class FB15K_237(BaseGraph):
         }
         for item in items["text"]:
             head_id, relation, tail_id = item.split("\t")
-            result["head"].append(head_id)
-            result["relation"].append(relation)
-            result["tail"].append(tail_id)
+            if invert_triplets:
+                result["head"].append(tail_id)
+                result["relation"].append(f"{relation}_reverse")
+                result["tail"].append(head_id)
+            else:
+                result["head"].append(head_id)
+                result["relation"].append(relation)
+                result["tail"].append(tail_id)
+
         return result
 
 

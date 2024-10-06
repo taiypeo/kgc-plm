@@ -9,7 +9,7 @@ def embed_sbert(
 ) -> np.ndarray:
     model = SentenceTransformer(model_name, cache_folder=cache_dir)
     embeddings = model.encode(
-        sentences=graph.texts(),
+        sentences=graph.texts,
         batch_size=batch_size,
         normalize_embeddings=True,
         show_progress_bar=True,

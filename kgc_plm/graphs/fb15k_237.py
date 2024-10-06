@@ -90,9 +90,9 @@ class FB15K_237(BaseGraph):
 
     @staticmethod
     def _transform_triplets_dataset(
-        items: list[str], invert_triplets: bool
+        items: dict[str, list[str]], invert_triplets: bool
     ) -> dict[str, list[str]]:
-        result = {
+        result: dict[str, list[str]] = {
             "head": [],
             "relation": [],
             "tail": [],

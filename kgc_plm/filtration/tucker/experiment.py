@@ -92,7 +92,7 @@ class TuckERExperiment:
         print("Number of data points: %d" % len(test_data_idxs))
 
         for i in range(0, len(test_data_idxs), self.batch_size):
-            data_batch, _ = self.get_batch(er_vocab, test_data_idxs, i)
+            data_batch, _ = self.get_batch(er_vocab, test_data_idxs, i, len(graph.entity_ids))
             e1_idx = torch.tensor(data_batch[:, 0])
             r_idx = torch.tensor(data_batch[:, 1])
             e2_idx = torch.tensor(data_batch[:, 2])
@@ -181,11 +181,11 @@ class TuckERExperiment:
             model.eval()
             with torch.no_grad():
                 print("Validation:")
-                self.evaluate(model, graph.triplets["validation"])
+                self.evaluate(model, graph, graph.triplets["validation"])
                 if not it % 2:
                     print("Test:")
                     start_test = time.time()
-                    self.evaluate(model, graph.triplets["test"])
+                    self.evaluate(model, graph, graph.triplets["test"])
                     print(time.time() - start_test)
 
         return model

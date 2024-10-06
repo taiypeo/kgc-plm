@@ -6,7 +6,7 @@ from datasets import DatasetDict
 class BaseGraph(ABC):
     @property
     @abstractmethod
-    def relations(self) -> DatasetDict:
+    def triplets(self) -> DatasetDict:
         ...
 
     @property
@@ -22,4 +22,9 @@ class BaseGraph(ABC):
     @property
     @abstractmethod
     def texts(self) -> list[str]:
+        ...
+
+    @property
+    @abstractmethod
+    def relations(self) -> list[str]:
         ...

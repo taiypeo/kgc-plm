@@ -7,8 +7,8 @@ from .base import BaseGraph
 class FB15K_237(BaseGraph):
     def __init__(self, batch_size: int = 1000, cache_dir: str = "cache") -> None:
         relations_dataset = load_dataset("KGraph/FB15k-237", cache_dir=cache_dir)
-        self._relations_dataset = relations_dataset.map(
-            FB15K_237._transform_relations_dataset,
+        self._triplets_dataset = relations_dataset.map(
+            FB15K_237._transform_triplets_dataset,
             batched=True,
             batch_size=batch_size,
         ).remove_columns("text")
@@ -18,14 +18,20 @@ class FB15K_237(BaseGraph):
 
         self._entityids = []
         self._descriptions = []
-        for entity_id, description in self._entityid_to_description:
+        for entity_id, description in sorted(self._entityid_to_description.items()):
             self._entityids.append(entity_id)
             self._descriptions.append(description)
 
+        all_relations = set()
+        for split_name in self._triplets_dataset:
+            all_relations |= set(self._triplets_dataset[split_name]["relation"])
+
+        self._relations = sorted(all_relations)
+
 
     @property
-    def relations(self) -> DatasetDict:
-        return self._relations_dataset
+    def triplets(self) -> DatasetDict:
+        return self._triplets_dataset
 
 
     @property
@@ -34,17 +40,24 @@ class FB15K_237(BaseGraph):
         # in some shape or form, so we can try using only them.
         return self._entityid_to_description
 
+
     @property
     def entity_ids(self) -> list[str]:
         return self._entityids
+
 
     @property
     def texts(self) -> list[str]:
         return self._descriptions
 
 
+    @property
+    def relations(self) -> list[str]:
+        return self._relations
+
+
     @staticmethod
-    def _transform_relations_dataset(items: list[str]) -> dict[str, list[str]]:
+    def _transform_triplets_dataset(items: list[str]) -> dict[str, list[str]]:
         result = {
             "head": [],
             "relation": [],

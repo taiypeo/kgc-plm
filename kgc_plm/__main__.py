@@ -13,18 +13,22 @@ def filtration() -> None:
 
 @filtration.command("train-tucker")
 @click.option("--graph-name", default="fb15k_237", help="Graph to train on")
-@click.option("--dataset-batch-size", default=1000, help="Batch size for dataset mapping operations")
+@click.option(
+    "--dataset-batch-size",
+    default=1000,
+    help="Batch size for dataset mapping operations",
+)
 @click.option("--learning_rate", default=0.0005)
 @click.option("--ent_vec_dim", default=200)
 @click.option("--rel_vec_dim", default=200)
 @click.option("--num_iterations", default=500)
 @click.option("--batch_size", default=128)
-@click.option("--decay_rate", default=0.)
+@click.option("--decay_rate", default=0.0)
 @click.option("--cuda", default=False)
 @click.option("--input_dropout", default=0.3)
 @click.option("--hidden_dropout1", default=0.4)
 @click.option("--hidden_dropout2", default=0.5)
-@click.option("--label_smoothing", default=0.)
+@click.option("--label_smoothing", default=0.0)
 @click.option("--cache-dir", default="cache", help="Cache directory path")
 @click.argument("output-path", help="Where to store the resulting TuckER model")
 def _train_tucker(
@@ -64,10 +68,16 @@ def _train_tucker(
 
 
 @filtration.command("filter-candidates-sbert")
-@click.option("--graph-name", default="fb15k_237", help="Graph to filter candidates for")
+@click.option(
+    "--graph-name", default="fb15k_237", help="Graph to filter candidates for"
+)
 @click.option("--sbert-model", default="all-mpnet-base-v2", help="SBERT model")
 @click.option("--top-k", default=100, help="How many candidates to search for")
-@click.option("--dataset-batch-size", default=1000, help="Batch size for dataset mapping operations")
+@click.option(
+    "--dataset-batch-size",
+    default=1000,
+    help="Batch size for dataset mapping operations",
+)
 @click.option("--embedding-batch-size", default=32, help="Batch size for embeddings")
 @click.option("--cache-dir", default="cache", help="Cache directory path")
 @click.argument("output-path", help="Where to store the resulting candidates JSON file")

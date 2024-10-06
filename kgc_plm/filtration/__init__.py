@@ -1,8 +1,8 @@
 import faiss
 
+from ..graphs import get_graph
 from .sbert import embed_sbert
 from .tucker import TuckER, TuckERExperiment
-from ..graphs import get_graph
 
 
 def train_tucker(

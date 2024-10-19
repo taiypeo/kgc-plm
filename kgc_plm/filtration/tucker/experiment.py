@@ -91,9 +91,9 @@ class TuckERExperiment:
         test_data_idxs = self.get_data_idxs(data)
         er_vocab = self.get_er_vocab(
             self.get_data_idxs(
-                concatenate_datasets(
+                concatenate_datasets([
                     graph.triplets[split_name] for split_name in graph.triplets
-                )
+                ])
             )
         )
 

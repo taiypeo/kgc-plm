@@ -47,15 +47,16 @@ class TuckERExperiment:
             logging.info("Using CUDA for TuckER training and evaluation")
 
     def get_data_idxs(self, data: Dataset) -> list[tuple[int, int, int]]:
-        data_idxs = [
-            (
-                self.entity_idxs[data["head"][i]],
-                self.relation_idxs[data["relation"][i]],
-                self.entity_idxs[data["tail"][i]],
-            )
-            for i in range(len(data))
-        ]
-        return data_idxs
+        transformed_data = data.map(
+            lambda x: {
+                "result": (
+                    self.entity_idxs[x["head"]],
+                    self.relation_idxs[x["relation"]],
+                    self.entity_idxs[x["tail"]],
+                )
+            }
+        )
+        return transformed_data["result"]
 
     def get_er_vocab(
         self, data: list[tuple[int, int, int]]

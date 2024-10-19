@@ -30,7 +30,7 @@ def filtration() -> None:
 @click.option("--hidden_dropout2", default=0.5)
 @click.option("--label_smoothing", default=0.0)
 @click.option("--cache-dir", default="cache", help="Cache directory path")
-@click.argument("output-path", help="Where to store the resulting TuckER model")
+@click.argument("output-path")
 def _train_tucker(
     graph_name: str,
     dataset_batch_size: int,
@@ -80,7 +80,7 @@ def _train_tucker(
 )
 @click.option("--embedding-batch-size", default=32, help="Batch size for embeddings")
 @click.option("--cache-dir", default="cache", help="Cache directory path")
-@click.argument("output-path", help="Where to store the resulting candidates JSON file")
+@click.argument("output-path")
 def _filter_candidates_sbert(
     graph_name: str,
     sbert_model: str,

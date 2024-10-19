@@ -100,9 +100,7 @@ class TuckERExperiment:
         logger.info("Number of data points: %d" % len(test_data_idxs))
 
         for i in range(0, len(test_data_idxs), self.batch_size):
-            data_batch, _ = self.get_batch(
-                er_vocab, test_data_idxs, i, len(graph.entity_ids)
-            )
+            data_batch = np.array(test_data_idxs[i : i + self.batch_size])
             e1_idx = torch.tensor(data_batch[:, 0])
             r_idx = torch.tensor(data_batch[:, 1])
             e2_idx = torch.tensor(data_batch[:, 2])
@@ -118,7 +116,7 @@ class TuckERExperiment:
                 predictions[j, filt] = 0.0
                 predictions[j, e2_idx[j]] = target_value
 
-            sort_values, sort_idxs = torch.sort(predictions, dim=1, descending=True)
+            _, sort_idxs = torch.sort(predictions, dim=1, descending=True)
 
             sort_idxs = sort_idxs.cpu().numpy()
             for j in range(data_batch.shape[0]):

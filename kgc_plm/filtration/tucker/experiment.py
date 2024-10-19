@@ -1,3 +1,4 @@
+import logging
 import time
 from collections import defaultdict
 
@@ -8,6 +9,9 @@ from torch.optim.lr_scheduler import ExponentialLR
 
 from ...graphs import BaseGraph
 from .model import TuckER
+
+
+logger = logging.getLogger(__name__)
 
 
 class TuckERExperiment:
@@ -89,7 +93,7 @@ class TuckERExperiment:
             )
         )
 
-        print("Number of data points: %d" % len(test_data_idxs))
+        logger.info("Number of data points: %d" % len(test_data_idxs))
 
         for i in range(0, len(test_data_idxs), self.batch_size):
             data_batch, _ = self.get_batch(
@@ -123,21 +127,21 @@ class TuckERExperiment:
                     else:
                         hits[hits_level].append(0.0)
 
-        print("Hits @10: {0}".format(np.mean(hits[9])))
-        print("Hits @3: {0}".format(np.mean(hits[2])))
-        print("Hits @1: {0}".format(np.mean(hits[0])))
-        print("Mean rank: {0}".format(np.mean(ranks)))
-        print("Mean reciprocal rank: {0}".format(np.mean(1.0 / np.array(ranks))))
+        logger.info("Hits @10: {0}".format(np.mean(hits[9])))
+        logger.info("Hits @3: {0}".format(np.mean(hits[2])))
+        logger.info("Hits @1: {0}".format(np.mean(hits[0])))
+        logger.info("Mean rank: {0}".format(np.mean(ranks)))
+        logger.info("Mean reciprocal rank: {0}".format(np.mean(1.0 / np.array(ranks))))
 
     def train_and_eval(self, graph: BaseGraph) -> TuckER:
-        print("Training the TuckER model...")
+        logger.info("Training the TuckER model...")
         self.entity_idxs = {
             entity_id: i for i, entity_id in enumerate(graph.entity_ids)
         }
         self.relation_idxs = {relation: i for i, relation in enumerate(graph.relations)}
 
         train_data_idxs = self.get_data_idxs(graph.triplets["train"])
-        print("Number of training data points: %d" % len(train_data_idxs))
+        logger.info("Number of training data points: %d" % len(train_data_idxs))
 
         model = TuckER(graph, self.ent_vec_dim, self.rel_vec_dim, **self.kwargs)
         if self.cuda:
@@ -150,7 +154,7 @@ class TuckERExperiment:
         er_vocab = self.get_er_vocab(train_data_idxs)
         er_vocab_pairs = list(er_vocab.keys())
 
-        print("Starting training...")
+        logger.info("Starting training...")
         for it in range(1, self.num_iterations + 1):
             start_train = time.time()
             model.train()
@@ -177,17 +181,17 @@ class TuckERExperiment:
                 losses.append(loss.item())
             if self.decay_rate:
                 scheduler.step()
-            print(it)
-            print(time.time() - start_train)
-            print(np.mean(losses))
+            logger.info(it)
+            logger.info(time.time() - start_train)
+            logger.info(np.mean(losses))
             model.eval()
             with torch.no_grad():
-                print("Validation:")
+                logger.info("Validation:")
                 self.evaluate(model, graph, graph.triplets["validation"])
                 if not it % 2:
-                    print("Test:")
+                    logger.info("Test:")
                     start_test = time.time()
                     self.evaluate(model, graph, graph.triplets["test"])
-                    print(time.time() - start_test)
+                    logger.info(time.time() - start_test)
 
         return model

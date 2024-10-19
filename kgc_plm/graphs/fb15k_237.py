@@ -1,7 +1,12 @@
+import logging
+
 from datasets import DatasetDict, concatenate_datasets, load_dataset
 from huggingface_hub import hf_hub_download
 
 from .base import BaseGraph
+
+
+logger = logging.getLogger(__name__)
 
 
 class FB15K_237(BaseGraph):
@@ -11,15 +16,18 @@ class FB15K_237(BaseGraph):
         add_reverse_relations: bool = False,
         cache_dir: str = "cache",
     ) -> None:
+        logging.info("Loading the dataset triplets")
         self._triplets_dataset = FB15K_237._load_triplets_dataset(
             batch_size=batch_size,
             add_reverse_relations=add_reverse_relations,
             cache_dir=cache_dir,
         )
 
+        logging.info("Loading mid2description")
         self._entityid_to_description = FB15K_237._load_mid2description(cache_dir)
 
         # some entities do not have descriptions, so we use names for them
+        logging.info("Loading mid2name")
         self._entityid_to_name = FB15K_237._load_mid2name(cache_dir)
         for entity_id, name in self._entityid_to_name.items():
             if entity_id not in self._entityid_to_description:
@@ -36,6 +44,7 @@ class FB15K_237(BaseGraph):
             all_relations |= set(self._triplets_dataset[split_name]["relation"])
 
         self._relations = sorted(all_relations)
+        logging.info("Finished loading the dataset!")
 
     @property
     def triplets(self) -> DatasetDict:

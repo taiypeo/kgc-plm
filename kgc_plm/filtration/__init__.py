@@ -1,8 +1,13 @@
+import logging
+
 import faiss
 
 from ..graphs import get_graph
 from .sbert import embed_sbert
 from .tucker import TuckER, TuckERExperiment
+
+
+logger = logging.getLogger(__name__)
 
 
 def train_tucker(
@@ -21,7 +26,10 @@ def train_tucker(
     label_smoothing: float,
     cache_dir: str,
 ) -> TuckER:
+    logger.info("Loading the graph")
     graph = get_graph(graph_name, dataset_batch_size, cache_dir)
+
+    logger.info("Starting the TuckER experiment")
     experiment = TuckERExperiment(
         learning_rate,
         ent_vec_dim,
@@ -46,7 +54,10 @@ def filter_candidates_sbert(
     embedding_batch_size: int,
     cache_dir: str,
 ) -> dict[str, list[str]]:
+    logger.info("Loading the graph")
     graph = get_graph(graph_name, dataset_batch_size, cache_dir)
+
+    logger.info("Embedding entities")
     embeddings = embed_sbert(
         model_name=sbert_model,
         graph=graph,
@@ -54,6 +65,7 @@ def filter_candidates_sbert(
         cache_dir=cache_dir,
     )
 
+    logger.info("Creating and filling the FAISS index")
     vector_index = faiss.IndexFlatIP(embeddings.shape[1])
     vector_index.add(embeddings)
 
@@ -61,6 +73,7 @@ def filter_candidates_sbert(
     # TODO: add GPU support?
     # TODO: speed up search by using a different index type?
     # TODO: exclude known relations?
+    logger.info("Selecting nearest neighbors")
     _, neighbor_indices = vector_index.search(embeddings, top_k)
 
     candidates = {}

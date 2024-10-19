@@ -17,8 +17,13 @@ class FB15K_237(BaseGraph):
             cache_dir=cache_dir,
         )
 
-        self._entityid_to_name = FB15K_237._load_mid2name(cache_dir)
         self._entityid_to_description = FB15K_237._load_mid2description(cache_dir)
+
+        # some entities do not have descriptions, so we use names for them
+        self._entityid_to_name = FB15K_237._load_mid2name(cache_dir)
+        for entity_id, name in self._entityid_to_name.items():
+            if entity_id not in self._entityid_to_description:
+                self._entityid_to_description[entity_id] = name
 
         self._entityids = []
         self._descriptions = []

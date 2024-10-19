@@ -146,6 +146,7 @@ class TuckERExperiment:
 
         train_data_idxs = self.get_data_idxs(graph.triplets["train"])
         logger.info("Number of training data points: %d" % len(train_data_idxs))
+        logger.info("Number of training epochs: %d" % self.num_iterations)
 
         model = TuckER(graph, self.ent_vec_dim, self.rel_vec_dim, **self.kwargs)
         if self.cuda:

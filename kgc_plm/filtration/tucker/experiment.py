@@ -56,7 +56,7 @@ class TuckERExperiment:
                 )
             }
         )
-        return transformed_data["result"]
+        return [tuple(triple) for triple in transformed_data["result"]]
 
     def get_er_vocab(
         self, data: list[tuple[int, int, int]]

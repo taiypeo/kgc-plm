@@ -1,9 +1,13 @@
 import json
+import logging
 
 import click
 import torch
 
 from .filtration import filter_candidates_sbert, train_tucker
+
+
+logging.basicConfig(level=logging.INFO)
 
 
 @click.group()

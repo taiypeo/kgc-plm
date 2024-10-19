@@ -48,11 +48,11 @@ class TuckERExperiment:
 
     def get_data_idxs(self, data: Dataset) -> list[tuple[int, int, int]]:
         transformed_data = data.map(
-            lambda x: {
+            lambda triple: {
                 "result": (
-                    self.entity_idxs[x["head"]],
-                    self.relation_idxs[x["relation"]],
-                    self.entity_idxs[x["tail"]],
+                    self.entity_idxs[triple["head"]],
+                    self.relation_idxs[triple["relation"]],
+                    self.entity_idxs[triple["tail"]],
                 )
             }
         )

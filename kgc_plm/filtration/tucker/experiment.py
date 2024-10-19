@@ -43,6 +43,9 @@ class TuckERExperiment:
             "hidden_dropout2": hidden_dropout2,
         }
 
+        if self.cuda:
+            logging.info("Using CUDA for TuckER training and evaluation")
+
     def get_data_idxs(self, data: Dataset) -> list[tuple[int, int, int]]:
         data_idxs = [
             (

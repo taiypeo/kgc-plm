@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 
 import faiss
 import torch
@@ -80,12 +81,15 @@ def filter_candidates_tucker(
 
 def filter_candidates_sbert(
     graph_name: str,
+    split_name: str,
     sbert_model: str,
     top_k: int,
     dataset_batch_size: int,
     embedding_batch_size: int,
+    train_split_name: str,
+    ignore_triplets_from_train: bool,
     cache_dir: str,
-) -> dict[str, list[str]]:
+) -> dict[tuple[str, str], list[str]]:
     logger.info("Loading the graph")
     graph = get_graph(graph_name, dataset_batch_size, cache_dir)
 
@@ -101,16 +105,36 @@ def filter_candidates_sbert(
     vector_index = faiss.IndexFlatIP(embeddings.shape[1])
     vector_index.add(embeddings)
 
-    # TODO: account for relations?
     # TODO: add GPU support?
     # TODO: speed up search by using a different index type?
-    # TODO: exclude known relations?
     logger.info("Selecting nearest neighbors")
     _, neighbor_indices = vector_index.search(embeddings, top_k)
 
     candidates = {}
-    entity_ids = graph.entity_ids
-    for entity_id, entity_neighbors in zip(entity_ids, neighbor_indices):
-        candidates[entity_id] = [entity_ids[i] for i in entity_neighbors]
+    for entity_id, entity_neighbors in zip(graph.entity_ids, neighbor_indices):
+        candidates[entity_id] = [graph.entity_ids[i] for i in entity_neighbors]
 
-    return candidates
+    if ignore_triplets_from_train:
+        logger.info("Setting up the train_triplets dict")
+        train_triplets = defaultdict(set)
+        for triplet in graph.triplets[train_split_name]:
+            train_triplets[(triplet["head"], triplet["relation"])].add(triplet["tail"])
+    else:
+        train_triplets = None
+
+    logger.info("Filling the split candidates dict")
+    split_candidates = {}
+    for triplet in graph.triplets[split_name]:
+        head, relation = triplet["head"], triplet["relation"]
+        if train_triplets is not None:
+            tail_candidates = [
+                candidate
+                for candidate in candidates[head]
+                if candidate not in train_triplets[(head, relation)]
+            ]
+        else:
+            tail_candidates = candidates[head]
+
+        split_candidates[(head, relation)] = tail_candidates
+
+    return split_candidates

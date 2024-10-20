@@ -134,6 +134,7 @@ def _filter_candidates_tucker(
 @click.option(
     "--graph-name", default="fb15k_237", help="Graph to filter candidates for"
 )
+@click.option("--split-name", default="test", help="Split to filter candidates for")
 @click.option("--sbert-model", default="all-mpnet-base-v2", help="SBERT model")
 @click.option("--top-k", default=100, help="How many candidates to search for")
 @click.option(
@@ -142,25 +143,42 @@ def _filter_candidates_tucker(
     help="Batch size for dataset mapping operations",
 )
 @click.option("--embedding-batch-size", default=32, help="Batch size for embeddings")
+@click.option(
+    "--train-split-name",
+    default="train",
+    help="Name of the training split for filtration",
+)
+@click.option(
+    "--ignore-triplets-from-train",
+    default=True,
+    help="Whether to ignore triplets from train when generating",
+)
 @click.option("--cache-dir", default="cache", help="Cache directory path")
 @click.argument("output-path")
 def _filter_candidates_sbert(
     graph_name: str,
+    split_name: str,
     sbert_model: str,
     top_k: int,
     dataset_batch_size: int,
     embedding_batch_size: int,
+    train_split_name: str,
+    ignore_triplets_from_train: bool,
     cache_dir: str,
     output_path: str,
 ):
     candidates = filter_candidates_sbert(
         graph_name=graph_name,
+        split_name=split_name,
         sbert_model=sbert_model,
         top_k=top_k,
         dataset_batch_size=dataset_batch_size,
         embedding_batch_size=embedding_batch_size,
+        train_split_name=train_split_name,
+        ignore_triplets_from_train=ignore_triplets_from_train,
         cache_dir=cache_dir,
     )
+    candidates = {str(k): v for k, v in candidates.items()}
     with open(output_path, "w") as file:
         json.dump(candidates, file)
 

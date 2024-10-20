@@ -125,6 +125,7 @@ def _filter_candidates_tucker(
         ignore_triplets_from_train=ignore_triplets_from_train,
         cache_dir=cache_dir,
     )
+    candidates = {str(k): v for k, v in candidates.items()}
     with open(output_path, "w") as file:
         json.dump(candidates, file)
 

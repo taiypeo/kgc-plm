@@ -94,11 +94,6 @@ def _train_tucker(
     help="Name of the training split for filtration",
 )
 @click.option(
-    "--train-split-name",
-    default="train",
-    help="Name of the training split for filtration",
-)
-@click.option(
     "--ignore-triplets-from-train",
     default=True,
     help="Whether to ignore triplets from train when generating",

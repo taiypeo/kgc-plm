@@ -1,6 +1,7 @@
 import logging
 
 import faiss
+import torch
 
 from ..graphs import get_graph
 from .sbert import embed_sbert
@@ -44,6 +45,38 @@ def train_tucker(
         label_smoothing,
     )
     return experiment.train_and_eval(graph)
+
+
+def filter_candidates_tucker(
+    graph_name: str,
+    split_name: str,
+    trained_tucker_path: str,
+    top_k: int,
+    dataset_batch_size: int,
+    prediction_batch_size: int,
+    cuda: bool,
+    train_split_name: str,
+    ignore_triplets_from_train: bool,
+    cache_dir: str,
+) -> dict[tuple[str, str], list[str]]:
+    logger.info("Loading the graph")
+    graph = get_graph(graph_name, dataset_batch_size, cache_dir)
+
+    logger.info("Loading the TuckER model")
+    model: TuckER = torch.load(trained_tucker_path)
+    model.eval()
+
+    logger.info("Predicting for split %s" % (split_name))
+    experiment = TuckERExperiment(batch_size=prediction_batch_size, cuda=cuda)
+    experiment.set_graph(graph)
+    return experiment.predict(
+        model=model,
+        graph=graph,
+        split=split_name,
+        top_k=top_k,
+        train_split=train_split_name,
+        ignore_triplets_from_train=ignore_triplets_from_train,
+    )
 
 
 def filter_candidates_sbert(

@@ -46,6 +46,12 @@ class TuckERExperiment:
         if self.cuda:
             logging.info("Using CUDA for TuckER training and evaluation")
 
+    def set_graph(self, graph: BaseGraph) -> None:
+        self.entity_idxs = {
+            entity_id: i for i, entity_id in enumerate(graph.entity_ids)
+        }
+        self.relation_idxs = {relation: i for i, relation in enumerate(graph.relations)}
+
     def get_data_idxs(self, data: Dataset) -> list[tuple[int, int, int]]:
         transformed_data = data.map(
             lambda triple: {
@@ -81,6 +87,7 @@ class TuckERExperiment:
         if self.cuda:
             targets = targets.cuda()
         return np.array(batch), targets
+
 
     def evaluate(self, model: TuckER, graph: BaseGraph, data: Dataset) -> None:
         hits = []
@@ -137,10 +144,7 @@ class TuckERExperiment:
 
     def train_and_eval(self, graph: BaseGraph) -> TuckER:
         logger.info("Training the TuckER model...")
-        self.entity_idxs = {
-            entity_id: i for i, entity_id in enumerate(graph.entity_ids)
-        }
-        self.relation_idxs = {relation: i for i, relation in enumerate(graph.relations)}
+        self.set_graph(graph)
 
         train_data_idxs = self.get_data_idxs(graph.triplets["train"])
         logger.info("Number of training data points: %d" % len(train_data_idxs))
@@ -198,3 +202,48 @@ class TuckERExperiment:
                     logger.info(time.time() - start_test)
 
         return model
+
+    def predict(
+        self,
+        model: TuckER,
+        graph: BaseGraph,
+        split: str,
+        top_k: int,
+        train_split: str = "train",
+        ignore_triplets_from_train: bool = False,
+    ) -> dict[tuple[str, str], list[str]]:
+        model.eval()
+        if self.cuda:
+            model.cuda()
+
+        if ignore_triplets_from_train:
+            train_er_vocab = self.get_er_vocab(
+                self.get_data_idxs(graph.triplets[train_split])
+            )
+        else:
+            train_er_vocab = None
+
+        test_data_idxs = self.get_data_idxs(graph.triplets[split])
+        result = defaultdict(list)
+        for i in range(0, len(test_data_idxs), self.batch_size):
+            data_batch = np.array(test_data_idxs[i : i + self.batch_size])
+            e1_idx = torch.tensor(data_batch[:, 0])
+            r_idx = torch.tensor(data_batch[:, 1])
+            if self.cuda:
+                e1_idx = e1_idx.cuda()
+                r_idx = r_idx.cuda()
+            predictions = model.forward(e1_idx, r_idx)
+            if train_er_vocab is not None:
+                for j in range(data_batch.shape[0]):
+                    filt = train_er_vocab[(data_batch[j][0], data_batch[j][1])]
+                    predictions[j, filt] = 0.0
+
+            _, sort_idxs = torch.sort(predictions, dim=1, descending=True)
+            sort_idxs = sort_idxs.cpu().numpy()[:, :top_k]
+            for j in range(data_batch.shape[0]):
+                e1_idx_str = graph.entity_ids[e1_idx[j]]
+                r_idx_str = graph.relations[r_idx[j]]
+                e2_idx_strs = [graph.entity_ids[idx] for idx in sort_idxs[j]]
+                result[(e1_idx_str, r_idx_str)].extend(e2_idx_strs)
+
+        return dict(result)

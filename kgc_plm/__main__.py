@@ -4,7 +4,7 @@ import logging
 import click
 import torch
 
-from .filtration import filter_candidates_sbert, train_tucker
+from .filtration import filter_candidates_sbert, filter_candidates_tucker, train_tucker
 
 
 logging.basicConfig(level=logging.INFO)
@@ -68,7 +68,59 @@ def _train_tucker(
         label_smoothing=label_smoothing,
         cache_dir=cache_dir,
     )
-    torch.save(model.state_dict(), output_path)
+    torch.save(model, output_path)
+
+
+@filtration.command("filter-candidates-tucker")
+@click.option(
+    "--graph-name", default="fb15k_237", help="Graph to filter candidates for"
+)
+@click.option("--split-name", default="test", help="Split to filter candidates for")
+@click.option("--trained-tucker-path", help="Path for trained TuckER model")
+@click.option("--top-k", default=100, help="How many candidates to search for")
+@click.option(
+    "--dataset-batch-size",
+    default=1000,
+    help="Batch size for dataset mapping operations",
+)
+@click.option(
+    "--prediction-batch-size",
+    default=128,
+    help="Batch size for TuckER predictions",
+)
+@click.option("--cuda", default=True, help="Whether to use CUDA when predicting")
+@click.option("--train-split-name", default="train", help="Name of the training split for filtration")
+@click.option("--train-split-name", default="train", help="Name of the training split for filtration")
+@click.option("--ignore-triplets-from-train", default=True, help="Whether to ignore triplets from train when generating")
+@click.option("--cache-dir", default="cache", help="Cache directory path")
+@click.argument("output-path")
+def _filter_candidates_tucker(
+    graph_name: str,
+    split_name: str,
+    trained_tucker_path: str,
+    top_k: int,
+    dataset_batch_size: int,
+    prediction_batch_size: int,
+    cuda: bool,
+    train_split_name: str,
+    ignore_triplets_from_train: bool,
+    cache_dir: str,
+    output_path: str,
+):
+    candidates = filter_candidates_tucker(
+        graph_name=graph_name,
+        split_name=split_name,
+        trained_tucker_path=trained_tucker_path,
+        top_k=top_k,
+        dataset_batch_size=dataset_batch_size,
+        prediction_batch_size=prediction_batch_size,
+        cuda=cuda,
+        train_split_name=train_split_name,
+        ignore_triplets_from_train=ignore_triplets_from_train,
+        cache_dir=cache_dir,
+    )
+    with open(output_path, "w") as file:
+        json.dump(candidates, file)
 
 
 @filtration.command("filter-candidates-sbert")

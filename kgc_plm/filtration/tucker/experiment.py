@@ -233,6 +233,9 @@ class TuckERExperiment:
             predictions = model.forward(e1_idx, r_idx)
             if train_er_vocab is not None:
                 for j in range(data_batch.shape[0]):
+                    if (data_batch[j][0], data_batch[j][1]) not in train_er_vocab:
+                        continue
+
                     filt = train_er_vocab[(data_batch[j][0], data_batch[j][1])]
                     predictions[j, filt] = 0.0
 

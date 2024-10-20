@@ -10,7 +10,6 @@ from torch.optim.lr_scheduler import ExponentialLR
 from ...graphs import BaseGraph
 from .model import TuckER
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -88,7 +87,6 @@ class TuckERExperiment:
             targets = targets.cuda()
         return np.array(batch), targets
 
-
     def evaluate(self, model: TuckER, graph: BaseGraph, data: Dataset) -> None:
         hits = []
         ranks = []
@@ -98,9 +96,9 @@ class TuckERExperiment:
         test_data_idxs = self.get_data_idxs(data)
         er_vocab = self.get_er_vocab(
             self.get_data_idxs(
-                concatenate_datasets([
-                    graph.triplets[split_name] for split_name in graph.triplets
-                ])
+                concatenate_datasets(
+                    [graph.triplets[split_name] for split_name in graph.triplets]
+                )
             )
         )
 

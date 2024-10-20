@@ -6,7 +6,6 @@ import torch
 
 from .filtration import filter_candidates_sbert, filter_candidates_tucker, train_tucker
 
-
 logging.basicConfig(level=logging.INFO)
 
 
@@ -89,9 +88,21 @@ def _train_tucker(
     help="Batch size for TuckER predictions",
 )
 @click.option("--cuda", default=True, help="Whether to use CUDA when predicting")
-@click.option("--train-split-name", default="train", help="Name of the training split for filtration")
-@click.option("--train-split-name", default="train", help="Name of the training split for filtration")
-@click.option("--ignore-triplets-from-train", default=True, help="Whether to ignore triplets from train when generating")
+@click.option(
+    "--train-split-name",
+    default="train",
+    help="Name of the training split for filtration",
+)
+@click.option(
+    "--train-split-name",
+    default="train",
+    help="Name of the training split for filtration",
+)
+@click.option(
+    "--ignore-triplets-from-train",
+    default=True,
+    help="Whether to ignore triplets from train when generating",
+)
 @click.option("--cache-dir", default="cache", help="Cache directory path")
 @click.argument("output-path")
 def _filter_candidates_tucker(

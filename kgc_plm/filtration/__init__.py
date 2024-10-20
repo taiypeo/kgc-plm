@@ -7,7 +7,6 @@ from ..graphs import get_graph
 from .sbert import embed_sbert
 from .tucker import TuckER, TuckERExperiment
 
-
 logger = logging.getLogger(__name__)
 
 

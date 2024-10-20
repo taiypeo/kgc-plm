@@ -5,7 +5,6 @@ from huggingface_hub import hf_hub_download
 
 from .base import BaseGraph
 
-
 logger = logging.getLogger(__name__)
 
 

@@ -123,7 +123,7 @@ def construct_dataset(
 
     logging.info("Sampling triplets for the validation split")
     valid_triplets = _get_triplets(
-        graph.triplets["valid"],
+        graph.triplets["validation"],
         graph.entity_ids,
         graph.relations,
         random_seed=random_seed,

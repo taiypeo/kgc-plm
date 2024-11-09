@@ -72,7 +72,7 @@ def _get_triplets(
         head = random.choice(entities)
         tail = random.choice(entities)
         relation = random.choice(relations)
-        new_triplet = (head, tail, relation)
+        new_triplet = (head, relation, tail)
 
         if (
             valid_triplets is not None and new_triplet in valid_triplets or

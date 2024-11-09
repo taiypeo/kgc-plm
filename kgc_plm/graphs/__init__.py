@@ -91,10 +91,12 @@ def _construct_prompts(graph: BaseGraph, prompt_template: str, triplets: dict[bo
     for label, label_triplets in triplets.items():
         for t in label_triplets:
             d["label"].append(int(label))
-            d["text"] = prompt_template.format(
-                graph.entity_id_to_text[t[0]],
-                t[1],
-                graph.entity_id_to_text[t[2]],
+            d["text"].append(
+                prompt_template.format(
+                    graph.entity_id_to_text[t[0]],
+                    t[1],
+                    graph.entity_id_to_text[t[2]],
+                )
             )
 
     return Dataset.from_dict(d)

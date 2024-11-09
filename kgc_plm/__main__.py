@@ -205,6 +205,7 @@ def graph() -> None:
 )
 @click.option("--pos-train-size", default=1., help="Part of train to consider")
 @click.option("--max-attempts", default=10_000_000, help="Max attempts to sample negative examples")
+@click.option("--use-entity-names", default=False, help="Whether to use entity names or entity descriptions in the prompt")
 @click.option("--cache-dir", default="cache", help="Cache directory path")
 @click.option("--random-seed", default=42, help="Random seed")
 @click.argument("output-path")
@@ -214,6 +215,7 @@ def _construct_dataset(
     prompt_template: str,
     pos_train_size: float,
     max_attempts: int,
+    use_entity_names: bool,
     cache_dir: str,
     random_seed: int,
     output_path: str,
@@ -223,9 +225,10 @@ def _construct_dataset(
         batch_size=dataset_batch_size,
         prompt_template=prompt_template,
         max_attempts=max_attempts,
+        use_entity_names=use_entity_names,
         cache_dir=cache_dir,
         pos_train_size=pos_train_size,
-        random_seed=random_seed
+        random_seed=random_seed,
     )
     dataset.save_to_disk(output_path)
 

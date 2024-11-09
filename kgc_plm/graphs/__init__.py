@@ -86,18 +86,32 @@ def _get_triplets(
     return {True: pos_triplets, False: neg_triplets}
 
 
-def _construct_prompts(graph: BaseGraph, prompt_template: str, triplets: dict[bool, set[tuple[str, str, str]]]) -> Dataset:
+def _construct_prompts(
+    graph: BaseGraph,
+    prompt_template: str,
+    triplets: dict[bool, set[tuple[str, str, str]]],
+    use_entity_names: bool = False,
+) -> Dataset:
     d = {"label": [], "text": []}
     for label, label_triplets in triplets.items():
         for t in label_triplets:
             d["label"].append(int(label))
-            d["text"].append(
-                prompt_template.format(
-                    graph.entity_id_to_text[t[0]],
-                    t[1],
-                    graph.entity_id_to_text[t[2]],
+            if use_entity_names:
+                d["text"].append(
+                    prompt_template.format(
+                        t[0],
+                        t[1],
+                        t[2],
+                    )
                 )
-            )
+            else:
+                d["text"].append(
+                    prompt_template.format(
+                        graph.entity_id_to_text[t[0]],
+                        t[1],
+                        graph.entity_id_to_text[t[2]],
+                    )
+                )
 
     return Dataset.from_dict(d)
 
@@ -110,6 +124,7 @@ def construct_dataset(
     cache_dir: str,
     pos_train_size: float = 1.,
     random_seed: int = 42,
+    use_entity_names: bool = False,
     **kwargs,
 ) -> DatasetDict:
     graph = get_graph(graph_name, batch_size, cache_dir, **kwargs)
@@ -151,21 +166,24 @@ def construct_dataset(
     result["train"] = _construct_prompts(
         graph,
         prompt_template,
-        train_triplets
+        train_triplets,
+        use_entity_names,
     )
 
     logging.info("Constructing the resulting dataset validation split")
     result["validation"] = _construct_prompts(
         graph,
         prompt_template,
-        valid_triplets
+        valid_triplets,
+        use_entity_names,
     )
 
     logging.info("Constructing the resulting dataset test split")
     result["test"] = _construct_prompts(
         graph,
         prompt_template,
-        test_triplets
+        test_triplets,
+        use_entity_names,
     )
 
     return result

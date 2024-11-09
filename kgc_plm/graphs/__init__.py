@@ -42,7 +42,7 @@ def _get_triplets(
         new_triplet = (
             pos_triplets_dataset["head"][i],
             pos_triplets_dataset["relation"][i],
-            pos_triplets_dataset["test"][i],
+            pos_triplets_dataset["tail"][i],
         )
         if (
             valid_triplets is not None and new_triplet in valid_triplets or

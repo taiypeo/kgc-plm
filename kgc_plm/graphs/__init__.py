@@ -1,9 +1,13 @@
 import random
+import logging
 
 from datasets import Dataset, DatasetDict
 
 from .base import BaseGraph
 from .fb15k_237 import FB15K_237
+
+
+logger = logging.getLogger(__name__)
 
 
 def get_graph(
@@ -31,6 +35,7 @@ def _get_triplets(
     random_seed: int = 42,
     valid_triplets: set | None = None,
     test_triplets: set | None = None,
+    max_attempts: int = 10_000_000,
 ) -> dict[bool, set[tuple[str, str, str]]]:
     pos_triplets_dataset = triplets_dataset
     if should_shuffle:
@@ -57,7 +62,14 @@ def _get_triplets(
 
     neg_triplets = set()
     random.seed(random_seed)
+    n_attempts = 0
     while len(neg_triplets) < len(pos_triplets):
+        n_attempts += 1
+        if n_attempts > max_attempts:
+            logging.info("Reached max attempts to sample negative samples")
+            logging.info(f"Generated {len(neg_triplets)} samples out of {len(pos_triplets)}")
+            break
+
         head = random.choice(entities)
         tail = random.choice(entities)
         relation = random.choice(relations)
@@ -93,6 +105,7 @@ def construct_dataset(
     graph_name: str,
     batch_size: int,
     prompt_template: str,
+    max_attempts: int,
     cache_dir: str,
     pos_train_size: float = 1.,
     random_seed: int = 42,
@@ -105,6 +118,7 @@ def construct_dataset(
         graph.entity_ids,
         graph.relations,
         random_seed=random_seed,
+        max_attempts=max_attempts,
     )
     valid_triplets = _get_triplets(
         graph.triplets["valid"],
@@ -112,6 +126,7 @@ def construct_dataset(
         graph.relations,
         random_seed=random_seed,
         test_triplets=test_triplets[True] | test_triplets[False],
+        max_attempts=max_attempts,
     )
     train_triplets = _get_triplets(
         graph.triplets["train"],
@@ -122,6 +137,7 @@ def construct_dataset(
         random_seed=random_seed,
         valid_triplets=valid_triplets[True] | valid_triplets[False],
         test_triplets=test_triplets[True] | test_triplets[False],
+        max_attempts=max_attempts,
     )
 
     result = DatasetDict()

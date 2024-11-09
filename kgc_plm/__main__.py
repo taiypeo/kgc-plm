@@ -204,6 +204,7 @@ def graph() -> None:
     help="Prompt template for T5",
 )
 @click.option("--pos-train-size", default=1., help="Part of train to consider")
+@click.option("--max-attempts", default=10_000_000, help="Max attempts to sample negative examples")
 @click.option("--cache-dir", default="cache", help="Cache directory path")
 @click.option("--random-seed", default=42, help="Random seed")
 @click.argument("output-path")
@@ -212,6 +213,7 @@ def _construct_dataset(
     dataset_batch_size: int,
     prompt_template: str,
     pos_train_size: float,
+    max_attempts: int,
     cache_dir: str,
     random_seed: int,
     output_path: str,
@@ -220,6 +222,7 @@ def _construct_dataset(
         graph_name=graph_name,
         batch_size=dataset_batch_size,
         prompt_template=prompt_template,
+        max_attempts=max_attempts,
         cache_dir=cache_dir,
         pos_train_size=pos_train_size,
         random_seed=random_seed

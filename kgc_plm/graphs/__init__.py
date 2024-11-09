@@ -41,9 +41,10 @@ def _get_triplets(
     if should_shuffle:
         pos_triplets_dataset = pos_triplets_dataset.shuffle(seed=random_seed)
 
+    pos_triplets_dataset = pos_triplets_dataset[:int(size * len(pos_triplets_dataset))]
+
     pos_triplets = set()
-    i = 0
-    while i < len(pos_triplets_dataset) and len(pos_triplets) < int(size * len(pos_triplets_dataset)):
+    for i in range(len(pos_triplets_dataset["head"])):
         new_triplet = (
             pos_triplets_dataset["head"][i],
             pos_triplets_dataset["relation"][i],
@@ -54,11 +55,9 @@ def _get_triplets(
             test_triplets is not None and new_triplet in test_triplets or
             new_triplet in pos_triplets
         ):
-            i += 1
             continue
 
         pos_triplets.add(new_triplet)
-        i += 1
 
     neg_triplets = set()
     random.seed(random_seed)

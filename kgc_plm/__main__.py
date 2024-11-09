@@ -5,6 +5,7 @@ import click
 import torch
 
 from .filtration import filter_candidates_sbert, filter_candidates_tucker, train_tucker
+from .graphs import construct_dataset
 
 logging.basicConfig(level=logging.INFO)
 
@@ -183,7 +184,50 @@ def _filter_candidates_sbert(
         json.dump(candidates, file)
 
 
-cli = click.CommandCollection(sources=[filtration])
+@click.group()
+def graph() -> None:
+    pass
+
+
+@filtration.command("construct-dataset")
+@click.option(
+    "--graph-name", default="fb15k_237", help="Graph to filter candidates for"
+)
+@click.option(
+    "--dataset-batch-size",
+    default=1000,
+    help="Batch size for dataset mapping operations",
+)
+@click.option(
+    "--prompt-template",
+    default="Head: {} Relation: {} Tail: {} Relevant:",
+    help="Prompt template for T5",
+)
+@click.option("--pos-train-size", default=1., help="Part of train to consider")
+@click.option("--cache-dir", default="cache", help="Cache directory path")
+@click.option("--random-seed", default=42, help="Random seed")
+@click.argument("output-path")
+def _construct_dataset(
+    graph_name: str,
+    dataset_batch_size: int,
+    prompt_template: str,
+    pos_train_size: float,
+    cache_dir: str,
+    random_seed: int,
+    output_path: str,
+):
+    dataset = construct_dataset(
+        graph_name=graph_name,
+        batch_size=dataset_batch_size,
+        prompt_template=prompt_template,
+        cache_dir=cache_dir,
+        pos_train_size=pos_train_size,
+        random_seed=random_seed
+    )
+    dataset.save_to_disk(output_path)
+
+
+cli = click.CommandCollection(sources=[filtration, graph])
 
 if __name__ == "__main__":
     cli()

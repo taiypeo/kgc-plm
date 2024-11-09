@@ -89,7 +89,6 @@ def _construct_prompts(graph: BaseGraph, prompt_template: str, triplets: dict[bo
     return Dataset.from_dict(d)
 
 
-
 def construct_dataset(
     graph_name: str,
     batch_size: int,

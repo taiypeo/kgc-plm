@@ -94,7 +94,7 @@ def _construct_prompts(graph: BaseGraph, prompt_template: str, triplets: dict[bo
             d["text"] = prompt_template.format(
                 graph.entity_id_to_text[t[0]],
                 t[1],
-                graph.entity_id_to_text[t[1]],
+                graph.entity_id_to_text[t[2]],
             )
 
     return Dataset.from_dict(d)

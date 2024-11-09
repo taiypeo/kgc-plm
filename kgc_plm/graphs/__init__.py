@@ -113,6 +113,7 @@ def construct_dataset(
 ) -> DatasetDict:
     graph = get_graph(graph_name, batch_size, cache_dir, **kwargs)
 
+    logging.info("Sampling triplets for the test split")
     test_triplets = _get_triplets(
         graph.triplets["test"],
         graph.entity_ids,
@@ -120,6 +121,8 @@ def construct_dataset(
         random_seed=random_seed,
         max_attempts=max_attempts,
     )
+
+    logging.info("Sampling triplets for the validation split")
     valid_triplets = _get_triplets(
         graph.triplets["valid"],
         graph.entity_ids,
@@ -128,6 +131,8 @@ def construct_dataset(
         test_triplets=test_triplets[True] | test_triplets[False],
         max_attempts=max_attempts,
     )
+
+    logging.info("Sampling triplets for the training split")
     train_triplets = _get_triplets(
         graph.triplets["train"],
         entities=graph.entity_ids,
@@ -141,16 +146,21 @@ def construct_dataset(
     )
 
     result = DatasetDict()
+    logging.info("Constructing the resulting dataset training split")
     result["train"] = _construct_prompts(
         graph,
         prompt_template,
         train_triplets
     )
+
+    logging.info("Constructing the resulting dataset validation split")
     result["validation"] = _construct_prompts(
         graph,
         prompt_template,
         valid_triplets
     )
+
+    logging.info("Constructing the resulting dataset test split")
     result["test"] = _construct_prompts(
         graph,
         prompt_template,

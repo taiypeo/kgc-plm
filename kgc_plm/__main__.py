@@ -260,6 +260,7 @@ def _construct_dataset(
     true_token: str,
     false_token: str,
     eval_steps: int,
+    report_to: str,
     batch_size: int,
     cache_dir: str,
     output_dir: str,

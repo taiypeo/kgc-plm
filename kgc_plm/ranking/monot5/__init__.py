@@ -1,7 +1,8 @@
 import torch
 from datasets import DatasetDict
 from torch import nn
-from transformers import T5ForConditionalGeneration, T5Tokenizer, Trainer, TrainingArguments, ModelOutput
+from transformers import T5ForConditionalGeneration, T5Tokenizer, Trainer, TrainingArguments
+from transformers.utils import ModelOutput
 
 
 # https://arxiv.org/pdf/2003.06713

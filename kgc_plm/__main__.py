@@ -251,6 +251,7 @@ def ranking() -> None:
 @click.option("--false-token", default="▁false", help="'false' token")
 @click.option("--train-epochs", default=3, help="Number of training epochs")
 @click.option("--eval-steps", default=10_000, help="Eval steps in the transformers Trainer")
+@click.option("--save-steps", default=10_000, help="Save steps in the transformers Trainer")
 @click.option("--report-to", default="none", help="Where to report to in the transformers Trainer")
 @click.option("--batch-size",default=8, help="Batch size")
 @click.option("--cache-dir", default="cache", help="Cache directory path")
@@ -262,6 +263,7 @@ def _construct_dataset(
     false_token: str,
     train_epochs: int,
     eval_steps: int,
+    save_steps: int,
     report_to: str,
     batch_size: int,
     cache_dir: str,
@@ -277,6 +279,7 @@ def _construct_dataset(
         false_token=false_token,
         train_epochs=train_epochs,
         eval_steps=eval_steps,
+        save_steps=save_steps,
         batch_size=batch_size,
         report_to=report_to,
     )

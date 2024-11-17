@@ -1,7 +1,7 @@
 import torch
 from datasets import DatasetDict
 from torch import nn
-from transformers import T5ForConditionalGeneration, T5Tokenizer, Trainer, TrainingArguments
+from transformers import T5ForConditionalGeneration, T5TokenizerFast, Trainer, TrainingArguments
 from transformers.utils import ModelOutput
 
 
@@ -20,7 +20,7 @@ def train_monot5(
     batch_size: int = 8,
     **kwargs,
 ) -> T5ForConditionalGeneration:
-    tokenizer = T5Tokenizer.from_pretrained(t5_model_name, cache_dir=cache_dir)
+    tokenizer = T5TokenizerFast.from_pretrained(t5_model_name, cache_dir=cache_dir)
     model = T5ForConditionalGeneration.from_pretrained(t5_model_name, cache_dir=cache_dir)
 
     true_token_id = tokenizer.vocab[true_token]

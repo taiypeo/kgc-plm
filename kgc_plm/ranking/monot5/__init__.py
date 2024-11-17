@@ -18,6 +18,7 @@ def train_monot5(
     false_token: str = "▁false",
     eval_steps: int = 10_000,
     batch_size: int = 8,
+    report_to: str = "none",
     **kwargs,
 ) -> T5ForConditionalGeneration:
     tokenizer = T5TokenizerFast.from_pretrained(t5_model_name, cache_dir=cache_dir)
@@ -42,6 +43,7 @@ def train_monot5(
         eval_steps=eval_steps,
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
+        report_to=report_to,
         **kwargs,
     )
     trainer = Trainer(

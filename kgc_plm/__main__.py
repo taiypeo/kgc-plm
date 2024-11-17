@@ -247,9 +247,10 @@ def ranking() -> None:
 @click.option(
     "--dataset-path", help="Path for the dataset that was previously constructed with construct-dataset"
 )
-@click.option("--true-token", default="_true", help="'true' token")
-@click.option("--false-token", default="_false", help="'false' token")
+@click.option("--true-token", default="▁true", help="'true' token")
+@click.option("--false-token", default="▁false", help="'false' token")
 @click.option("--eval-steps", default=10_000, help="Eval steps in the transformers Trainer")
+@click.option("--report-to", default="none", help="Where to report to in the transformers Trainer")
 @click.option("--batch-size",default=8, help="Batch size")
 @click.option("--cache-dir", default="cache", help="Cache directory path")
 @click.argument("output-dir")
@@ -273,6 +274,7 @@ def _construct_dataset(
         false_token=false_token,
         eval_steps=eval_steps,
         batch_size=batch_size,
+        report_to=report_to,
     )
 
 

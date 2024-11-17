@@ -3,9 +3,11 @@ import logging
 
 import click
 import torch
+from datasets import load_from_disk
 
 from .filtration import filter_candidates_sbert, filter_candidates_tucker, train_tucker
 from .graphs import construct_dataset
+from .ranking import train_monot5
 
 logging.basicConfig(level=logging.INFO)
 
@@ -233,7 +235,48 @@ def _construct_dataset(
     dataset.save_to_disk(output_path)
 
 
-cli = click.CommandCollection(sources=[filtration, graph])
+@click.group()
+def ranking() -> None:
+    pass
+
+
+@ranking.command("train-monot5")
+@click.option(
+    "--model-name", help="Hugging Face T5 base model name"
+)
+@click.option(
+    "--dataset-path", help="Path for the dataset that was previously constructed with construct-dataset"
+)
+@click.option("--true-token", default="_true", help="'true' token")
+@click.option("--false-token", default="_false", help="'false' token")
+@click.option("--eval-steps", default=10_000, help="Eval steps in the transformers Trainer")
+@click.option("--batch-size",default=8, help="Batch size")
+@click.option("--cache-dir", default="cache", help="Cache directory path")
+@click.argument("output-dir")
+def _construct_dataset(
+    model_name: str,
+    dataset_path: str,
+    true_token: str,
+    false_token: str,
+    eval_steps: int,
+    batch_size: int,
+    cache_dir: str,
+    output_dir: str,
+):
+    dataset = load_from_disk(dataset_path)
+    train_monot5(
+        t5_model_name=model_name,
+        dataset=dataset,
+        cache_dir=cache_dir,
+        output_dir=output_dir,
+        true_token=true_token,
+        false_token=false_token,
+        eval_steps=eval_steps,
+        batch_size=batch_size,
+    )
+
+
+cli = click.CommandCollection(sources=[filtration, graph, ranking])
 
 if __name__ == "__main__":
     cli()

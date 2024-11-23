@@ -1,26 +1,44 @@
 from ..graphs import BaseGraph
 
+HITS_AT_K: list[int] = [1, 3, 10]
+
+
+def _process_triplets(
+    items: dict[str, list[str]],
+    ranking: dict[tuple[str, str], list[str]],
+) -> dict[str, list[float]]:
+    result: dict[str, list[float]] = {
+        f"hits@{k}": []
+        for k in HITS_AT_K
+    }
+    result["mrr"] = []
+
+    for head, relation, tail in zip(items["head"], items["relation"], items["tail"]):
+        ranked_entity_ids = ranking[(head, relation)]
+        try:
+            rank = ranked_entity_ids.index(tail)
+            result["mrr"].append(1. / rank)
+            for k in HITS_AT_K:
+                result[f"hits@{k}"].append(float(rank <= k))
+        except ValueError:
+            result["mrr"].append(0.)
+            for k in HITS_AT_K:
+                result[f"hits@{k}"].append(0.)
+
+    return result
+
 
 def calculate_metrics(
     ranking: dict[tuple[str, str], list[str]],
     graph: BaseGraph,
     split: str = "test",
-    hits_at_k: list[int] = [1, 3, 10],
+    batch_size: int = 1000,
 ) -> dict[str, float]:
-    max_hits = max(hits_at_k)
-
-    hits = [0.0] * range(max_hits)
-    sum_reciprocal_ranks = 0.0
-    for triplet in graph.triplets[split]:
-        ranked_entity_ids = ranking[(triplet["head"], triplet["relation"])]
-        try:
-            rank = ranked_entity_ids.index(triplet["tail"])
-            sum_reciprocal_ranks += 1.0 / rank
-            for i in range(1, len(hits) + 1):
-                hits[i - 1] += float(rank <= i)
-        except ValueError:
-            continue  # reciprocal rank is 0 in this case
-
-    result = {f"hits@{k}": hits[k - 1] / len(graph.triplets[split]) for k in hits_at_k}
-    result["mrr"] = sum_reciprocal_ranks / len(graph.triplets[split])
+    mapped = graph.relations[split].map(
+        lambda items: _process_triplets(items, ranking),
+        batched=True,
+        batch_size=batch_size
+    )
+    result = {f"hits@{k}": sum(mapped[f"hits@{k}"]) / len(mapped) for k in HITS_AT_K}
+    result["mrr"] = sum(mapped["mrr"]) / len(mapped)
     return result

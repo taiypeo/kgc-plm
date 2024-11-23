@@ -12,6 +12,7 @@ from .metrics import calculate_metrics
 from .ranking import train_monot5
 
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 @click.group()
@@ -324,18 +325,19 @@ def _evaluate(
     cache_dir: str,
     output_path: str,
 ) -> None:
-    logging.info("Loading the graph")
+    logger.info("Loading the graph")
     graph = get_graph(graph_name, dataset_batch_size, cache_dir)
 
-    logging.info("Loading the ranking")
+    logger.info("Loading the ranking")
     with open(ranking_path) as file:
         ranking_str_key = json.load(file)
 
     ranking = {ast.literal_eval(k): v for k, v in ranking_str_key.items()}
     metrics = calculate_metrics(
-        ranking,
-        graph,
-        split_name,
+        ranking=ranking,
+        graph=graph,
+        split=split_name,
+        batch_size=dataset_batch_size,
     )
 
     with open(output_path, "w") as file:

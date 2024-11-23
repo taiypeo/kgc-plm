@@ -319,6 +319,7 @@ def _train_monot5(
     default=False,
     help="Whether to use entity names or entity descriptions in the prompt",
 )
+@click.option("--base-model-name", help="Hugging Face T5 base model name")
 @click.option("--model-name", help="Trained monoT5 model name")
 @click.option("--true-token", default="▁true", help="'true' token")
 @click.option("--false-token", default="▁false", help="'false' token")
@@ -331,6 +332,7 @@ def _rerank_monot5(
     dataset_batch_size: int,
     use_entity_names: bool,
     prompt_template: str,
+    base_model_name: str,
     model_name: str,
     true_token: str,
     false_token: str,
@@ -351,6 +353,7 @@ def _rerank_monot5(
     new_ranking = rerank_monot5(
         candidates=candidates,
         graph=graph,
+        base_model_name=base_model_name,
         t5_model_name=model_name,
         batch_size=batch_size,
         cache_dir=cache_dir,

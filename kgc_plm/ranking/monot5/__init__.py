@@ -150,6 +150,7 @@ def _predict_candidates(
 def rerank_monot5(
     candidates: dict[tuple[str, str], list[str]],
     graph: BaseGraph,
+    base_model_name: str,
     t5_model_name: str,
     batch_size: int,
     cache_dir: str,
@@ -158,7 +159,7 @@ def rerank_monot5(
     prompt_template: str = "Head: {} Relation: {} Tail: {} Relevant:",
     use_entity_names: bool = False
 ) -> dict[tuple[str, str], list[str]]:
-    tokenizer = T5TokenizerFast.from_pretrained(t5_model_name, cache_dir=cache_dir)
+    tokenizer = T5TokenizerFast.from_pretrained(base_model_name, cache_dir=cache_dir)
     model = T5ForConditionalGeneration.from_pretrained(
         t5_model_name, cache_dir=cache_dir
     )

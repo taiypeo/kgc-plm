@@ -306,7 +306,7 @@ def evaluation() -> None:
     pass
 
 
-@ranking.command("evaluate")
+@evaluation.command("evaluate")
 @click.option("--ranking-path", help="Path to ranking JSON")
 @click.option("--graph-name", default="fb15k_237", help="Graph name")
 @click.option(

@@ -333,6 +333,8 @@ def _evaluate(
         ranking_str_key = json.load(file)
 
     ranking = {ast.literal_eval(k): v for k, v in ranking_str_key.items()}
+
+    logger.info("Calculating the metrics")
     metrics = calculate_metrics(
         ranking=ranking,
         graph=graph,

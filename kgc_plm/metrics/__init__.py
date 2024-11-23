@@ -16,7 +16,7 @@ def _process_triplets(
     for head, relation, tail in zip(items["head"], items["relation"], items["tail"]):
         ranked_entity_ids = ranking[(head, relation)]
         try:
-            rank = ranked_entity_ids.index(tail)
+            rank = ranked_entity_ids.index(tail) + 1
             result["mrr"].append(1. / rank)
             for k in HITS_AT_K:
                 result[f"hits@{k}"].append(float(rank <= k))

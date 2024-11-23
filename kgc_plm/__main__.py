@@ -1,3 +1,4 @@
+import ast
 import json
 import logging
 
@@ -6,8 +7,9 @@ import torch
 from datasets import load_from_disk
 
 from .filtration import filter_candidates_sbert, filter_candidates_tucker, train_tucker
-from .graphs import construct_dataset
+from .graphs import construct_dataset, get_graph
 from .ranking import train_monot5
+from .metrics import calculate_metrics
 
 logging.basicConfig(level=logging.INFO)
 
@@ -53,7 +55,7 @@ def _train_tucker(
     label_smoothing: float,
     cache_dir: str,
     output_path: str,
-):
+) -> None:
     model = train_tucker(
         graph_name=graph_name,
         dataset_batch_size=dataset_batch_size,
@@ -115,7 +117,7 @@ def _filter_candidates_tucker(
     ignore_triplets_from_train: bool,
     cache_dir: str,
     output_path: str,
-):
+) -> None:
     candidates = filter_candidates_tucker(
         graph_name=graph_name,
         split_name=split_name,
@@ -169,7 +171,7 @@ def _filter_candidates_sbert(
     ignore_triplets_from_train: bool,
     cache_dir: str,
     output_path: str,
-):
+) -> None:
     candidates = filter_candidates_sbert(
         graph_name=graph_name,
         split_name=split_name,
@@ -221,7 +223,7 @@ def _construct_dataset(
     cache_dir: str,
     random_seed: int,
     output_path: str,
-):
+) -> None:
     dataset = construct_dataset(
         graph_name=graph_name,
         batch_size=dataset_batch_size,
@@ -268,7 +270,7 @@ def _construct_dataset(
     batch_size: int,
     cache_dir: str,
     output_dir: str,
-):
+) -> None:
     dataset = load_from_disk(dataset_path)
     train_monot5(
         t5_model_name=model_name,
@@ -285,7 +287,55 @@ def _construct_dataset(
     )
 
 
-cli = click.CommandCollection(sources=[filtration, graph, ranking])
+@click.group()
+def evaluation() -> None:
+    pass
+
+
+@ranking.command("evaluate")
+@click.option(
+    "--ranking-path", help="Path to ranking JSON"
+)
+@click.option(
+    "--graph-name", default="fb15k_237", help="Graph name"
+)
+@click.option(
+    "--dataset-batch-size",
+    default=1000,
+    help="Batch size for dataset mapping operations",
+)
+@click.option(
+    "--split-name", default="test", help="Graph split to evaluate on"
+)
+@click.option("--cache-dir", default="cache", help="Cache directory path")
+@click.argument("output-path")
+def _evaluate(
+    ranking_path: str,
+    graph_name: str,
+    dataset_batch_size: int,
+    split_name: str,
+    cache_dir: str,
+    output_path: str,
+) -> None:
+    logging.info("Loading the graph")
+    graph = get_graph(graph_name, dataset_batch_size, cache_dir)
+
+    logging.info("Loading the ranking")
+    with open(ranking_path) as file:
+        ranking_str_key = json.load(file)
+
+    ranking = {ast.literal_eval(k): v for k, v in ranking_str_key.items()}
+    metrics = calculate_metrics(
+        ranking,
+        graph,
+        split_name,
+    )
+
+    with open(output_path, "w") as file:
+        json.dump(metrics, file)
+
+
+cli = click.CommandCollection(sources=[filtration, graph, ranking, evaluation])
 
 if __name__ == "__main__":
     cli()

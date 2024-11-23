@@ -11,6 +11,7 @@ from transformers import (
     TrainingArguments,
 )
 from transformers.utils import ModelOutput
+from tqdm import tqdm
 
 from ...graphs import BaseGraph
 
@@ -178,14 +179,13 @@ def rerank_monot5(
     all_scores = {
         (head, relation): _predict_candidates(
             candidate_prompts=candidate_prompts,
-            graph=graph,
             tokenizer=tokenizer,
             model=model,
             batch_size=batch_size,
             true_token=true_token,
             false_token=false_token
         )
-        for (head, relation), candidate_prompts in all_prompts.items()
+        for (head, relation), candidate_prompts in tqdm(all_prompts.items())
     }
 
     return {

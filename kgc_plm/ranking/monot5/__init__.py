@@ -127,6 +127,9 @@ def _predict_candidates(
     true_token: str,
     false_token: str,
 ) -> list[float]:
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model = model.to(device)
+
     true_token_id = tokenizer.vocab[true_token]
     false_token_id = tokenizer.vocab[false_token]
     pad_token_id = tokenizer.pad_token_id
@@ -138,8 +141,8 @@ def _predict_candidates(
         outputs = model(
             decoder_input_ids=torch.full(
                 (tokenized["input_ids"].size(0), 1), pad_token_id
-            ),
-            **tokenized
+            ).to(device),
+            **{k: v.to(device) for k, v in tokenized.items()}
         )
         logits = outputs["logits"].squeeze(dim=1)[:, [true_token_id, false_token_id]]
         probas = F.softmax(logits, dim=-1)[:, 0].flatten().cpu().tolist()

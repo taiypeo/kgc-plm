@@ -34,7 +34,7 @@ def calculate_metrics(
     split: str = "test",
     batch_size: int = 1000,
 ) -> dict[str, float]:
-    mapped = graph.relations[split].map(
+    mapped = graph.triplets[split].map(
         lambda items: _process_triplets(items, ranking),
         batched=True,
         batch_size=batch_size

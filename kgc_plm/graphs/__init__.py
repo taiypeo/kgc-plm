@@ -1,11 +1,10 @@
-import random
 import logging
+import random
 
 from datasets import Dataset, DatasetDict
 
 from .base import BaseGraph
 from .fb15k_237 import FB15K_237
-
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +30,7 @@ def _get_triplets(
     entities: list[str],
     relations: list[str],
     should_shuffle: bool = False,
-    size: float = 1.,
+    size: float = 1.0,
     random_seed: int = 42,
     valid_triplets: set | None = None,
     test_triplets: set | None = None,
@@ -41,7 +40,7 @@ def _get_triplets(
     if should_shuffle:
         pos_triplets_dataset = pos_triplets_dataset.shuffle(seed=random_seed)
 
-    pos_triplets_dataset = pos_triplets_dataset[:int(size * len(pos_triplets_dataset))]
+    pos_triplets_dataset = pos_triplets_dataset[: int(size * len(pos_triplets_dataset))]
 
     pos_triplets = set()
     for i in range(len(pos_triplets_dataset["head"])):
@@ -51,9 +50,11 @@ def _get_triplets(
             pos_triplets_dataset["tail"][i],
         )
         if (
-            valid_triplets is not None and new_triplet in valid_triplets or
-            test_triplets is not None and new_triplet in test_triplets or
-            new_triplet in pos_triplets
+            valid_triplets is not None
+            and new_triplet in valid_triplets
+            or test_triplets is not None
+            and new_triplet in test_triplets
+            or new_triplet in pos_triplets
         ):
             continue
 
@@ -66,7 +67,9 @@ def _get_triplets(
         n_attempts += 1
         if n_attempts > max_attempts:
             logging.info("Reached max attempts to sample negative samples")
-            logging.info(f"Generated {len(neg_triplets)} samples out of {len(pos_triplets)}")
+            logging.info(
+                f"Generated {len(neg_triplets)} samples out of {len(pos_triplets)}"
+            )
             break
 
         head = random.choice(entities)
@@ -75,9 +78,11 @@ def _get_triplets(
         new_triplet = (head, relation, tail)
 
         if (
-            valid_triplets is not None and new_triplet in valid_triplets or
-            test_triplets is not None and new_triplet in test_triplets or
-            new_triplet in pos_triplets
+            valid_triplets is not None
+            and new_triplet in valid_triplets
+            or test_triplets is not None
+            and new_triplet in test_triplets
+            or new_triplet in pos_triplets
         ):
             continue
 
@@ -122,7 +127,7 @@ def construct_dataset(
     prompt_template: str,
     max_attempts: int,
     cache_dir: str,
-    pos_train_size: float = 1.,
+    pos_train_size: float = 1.0,
     random_seed: int = 42,
     use_entity_names: bool = False,
     **kwargs,

@@ -8,8 +8,8 @@ from datasets import load_from_disk
 
 from .filtration import filter_candidates_sbert, filter_candidates_tucker, train_tucker
 from .graphs import construct_dataset, get_graph
-from .ranking import train_monot5
 from .metrics import calculate_metrics
+from .ranking import train_monot5
 
 logging.basicConfig(level=logging.INFO)
 
@@ -207,9 +207,17 @@ def graph() -> None:
     default="Head: {} Relation: {} Tail: {} Relevant:",
     help="Prompt template for T5",
 )
-@click.option("--pos-train-size", default=1., help="Part of train to consider")
-@click.option("--max-attempts", default=10_000_000, help="Max attempts to sample negative examples")
-@click.option("--use-entity-names", default=False, help="Whether to use entity names or entity descriptions in the prompt")
+@click.option("--pos-train-size", default=1.0, help="Part of train to consider")
+@click.option(
+    "--max-attempts",
+    default=10_000_000,
+    help="Max attempts to sample negative examples",
+)
+@click.option(
+    "--use-entity-names",
+    default=False,
+    help="Whether to use entity names or entity descriptions in the prompt",
+)
 @click.option("--cache-dir", default="cache", help="Cache directory path")
 @click.option("--random-seed", default=42, help="Random seed")
 @click.argument("output-path")
@@ -243,19 +251,24 @@ def ranking() -> None:
 
 
 @ranking.command("train-monot5")
+@click.option("--model-name", help="Hugging Face T5 base model name")
 @click.option(
-    "--model-name", help="Hugging Face T5 base model name"
-)
-@click.option(
-    "--dataset-path", help="Path for the dataset that was previously constructed with construct-dataset"
+    "--dataset-path",
+    help="Path for the dataset that was previously constructed with construct-dataset",
 )
 @click.option("--true-token", default="▁true", help="'true' token")
 @click.option("--false-token", default="▁false", help="'false' token")
 @click.option("--train-epochs", default=3, help="Number of training epochs")
-@click.option("--eval-steps", default=10_000, help="Eval steps in the transformers Trainer")
-@click.option("--save-steps", default=10_000, help="Save steps in the transformers Trainer")
-@click.option("--report-to", default="none", help="Where to report to in the transformers Trainer")
-@click.option("--batch-size",default=8, help="Batch size")
+@click.option(
+    "--eval-steps", default=10_000, help="Eval steps in the transformers Trainer"
+)
+@click.option(
+    "--save-steps", default=10_000, help="Save steps in the transformers Trainer"
+)
+@click.option(
+    "--report-to", default="none", help="Where to report to in the transformers Trainer"
+)
+@click.option("--batch-size", default=8, help="Batch size")
 @click.option("--cache-dir", default="cache", help="Cache directory path")
 @click.argument("output-dir")
 def _construct_dataset(
@@ -293,20 +306,14 @@ def evaluation() -> None:
 
 
 @ranking.command("evaluate")
-@click.option(
-    "--ranking-path", help="Path to ranking JSON"
-)
-@click.option(
-    "--graph-name", default="fb15k_237", help="Graph name"
-)
+@click.option("--ranking-path", help="Path to ranking JSON")
+@click.option("--graph-name", default="fb15k_237", help="Graph name")
 @click.option(
     "--dataset-batch-size",
     default=1000,
     help="Batch size for dataset mapping operations",
 )
-@click.option(
-    "--split-name", default="test", help="Graph split to evaluate on"
-)
+@click.option("--split-name", default="test", help="Graph split to evaluate on")
 @click.option("--cache-dir", default="cache", help="Cache directory path")
 @click.argument("output-path")
 def _evaluate(

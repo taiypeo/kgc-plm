@@ -9,7 +9,7 @@ from datasets import load_from_disk
 from .filtration import filter_candidates_sbert, filter_candidates_tucker, train_tucker
 from .graphs import construct_dataset, get_graph
 from .metrics import calculate_metrics
-from .ranking import train_monot5, rerank_monot5
+from .ranking import train_monot5, rerank_monot5, train_rankt5, rerank_rankt5
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -365,6 +365,117 @@ def _rerank_monot5(
     new_ranking = {str(k): v for k, v in new_ranking.items()}
     with open(output_path, "w") as file:
         json.dump(new_ranking, file)
+
+
+@ranking.command("train-rankt5")
+@click.option("--model-name", help="Hugging Face T5 base model name")
+@click.option(
+    "--dataset-path",
+    help="Path for the dataset that was previously constructed with construct-dataset",
+)
+@click.option("--output-token", default="<extra_id_10>", help="Output token for logits")
+@click.option("--train-epochs", default=3, help="Number of training epochs")
+@click.option(
+    "--eval-steps", default=10_000, help="Eval steps in the transformers Trainer"
+)
+@click.option(
+    "--save-steps", default=10_000, help="Save steps in the transformers Trainer"
+)
+@click.option(
+    "--report-to", default="none", help="Where to report to in the transformers Trainer"
+)
+@click.option("--batch-size", default=8, help="Batch size")
+@click.option("--cache-dir", default="cache", help="Cache directory path")
+@click.argument("output-dir")
+def _train_rankt5(
+    model_name: str,
+    dataset_path: str,
+    output_token: str,
+    train_epochs: int,
+    eval_steps: int,
+    save_steps: int,
+    report_to: str,
+    batch_size: int,
+    cache_dir: str,
+    output_dir: str,
+) -> None:
+    dataset = load_from_disk(dataset_path)
+    train_rankt5(
+        t5_model_name=model_name,
+        dataset=dataset,
+        cache_dir=cache_dir,
+        output_dir=output_dir,
+        output_token=output_token,
+        train_epochs=train_epochs,
+        eval_steps=eval_steps,
+        save_steps=save_steps,
+        batch_size=batch_size,
+        report_to=report_to,
+    )
+
+
+@ranking.command("rerank-rankt5")
+@click.option("--candidates-path", help="Path to pre-ranked candidates")
+@click.option("--graph-name", default="fb15k_237", help="Graph name")
+@click.option(
+    "--dataset-batch-size",
+    default=1000,
+    help="Batch size for dataset mapping operations",
+)
+@click.option(
+    "--prompt-template",
+    default="Head: {} Relation: {} Tail: {} Relevant:",
+    help="Prompt template for T5",
+)
+@click.option(
+    "--use-entity-names",
+    default=False,
+    help="Whether to use entity names or entity descriptions in the prompt",
+)
+@click.option("--base-model-name", help="Hugging Face T5 base model name")
+@click.option("--model-name", help="Trained monoT5 model name")
+@click.option("--output-token", default="<extra_id_10>", help="Output token for logits")
+@click.option("--batch-size", default=8, help="Batch size")
+@click.option("--cache-dir", default="cache", help="Cache directory path")
+@click.argument("output-path")
+def _rerank_rankt5(
+    candidates_path: str,
+    graph_name: str,
+    dataset_batch_size: int,
+    use_entity_names: bool,
+    prompt_template: str,
+    base_model_name: str,
+    model_name: str,
+    output_token: str,
+    batch_size: int,
+    cache_dir: str,
+    output_path: str,
+) -> None:
+    logger.info("Loading the graph")
+    graph = get_graph(graph_name, dataset_batch_size, cache_dir)
+
+    logger.info("Loading the candidates")
+    with open(candidates_path) as file:
+        candidates_str_key = json.load(file)
+
+    candidates = {ast.literal_eval(k): v for k, v in candidates_str_key.items()}
+
+    logger.info("Re-ranking the candidates")
+    new_ranking = rerank_rankt5(
+        candidates=candidates,
+        graph=graph,
+        base_model_name=base_model_name,
+        t5_model_name=model_name,
+        batch_size=batch_size,
+        cache_dir=cache_dir,
+        output_token=output_token,
+        prompt_template=prompt_template,
+        use_entity_names=use_entity_names,
+    )
+    new_ranking = {str(k): v for k, v in new_ranking.items()}
+    with open(output_path, "w") as file:
+        json.dump(new_ranking, file)
+
 
 @click.group()
 def evaluation() -> None:

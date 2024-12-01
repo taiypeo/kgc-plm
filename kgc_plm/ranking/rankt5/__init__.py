@@ -16,16 +16,15 @@ from tqdm import tqdm
 from ...graphs import BaseGraph
 
 
-# https://arxiv.org/pdf/2003.06713
+# https://arxiv.org/pdf/2210.10634
 
 
-def train_monot5(
+def train_rankt5(
     t5_model_name: str,
     dataset: DatasetDict,
     cache_dir: str,
     output_dir: str,
-    true_token: str = "▁true",
-    false_token: str = "▁false",
+    output_token: str = "<extra_id_10>",
     train_epochs: int = 3,
     eval_steps: int = 10_000,
     save_steps: int = 10_000,
@@ -38,18 +37,14 @@ def train_monot5(
         t5_model_name, cache_dir=cache_dir
     )
 
-    true_token_id = tokenizer.vocab[true_token]
-    false_token_id = tokenizer.vocab[false_token]
+    output_token_id = tokenizer.vocab[output_token]
     pad_token_id = tokenizer.pad_token_id
 
-    def _monot5_loss(
+    def _pointce_loss(
         outputs: ModelOutput, labels: torch.Tensor, **kwargs
     ) -> torch.Tensor:
-        logits = outputs["logits"].squeeze(dim=1)  # batch_size x vocab_size
-        labels[labels == 0] = false_token_id
-        labels[labels == 1] = true_token_id
-
-        loss_fn = nn.CrossEntropyLoss()
+        logits = outputs["logits"].squeeze(dim=1)[:, output_token_id]
+        loss_fn = nn.BCEWithLogitsLoss()
         return loss_fn(logits, labels)
 
     def _collate_fn(features: list[dict[str, Any]]) -> dict[str, Any]:
@@ -84,7 +79,7 @@ def train_monot5(
         data_collator=_collate_fn,
         train_dataset=dataset["train"],
         eval_dataset=dataset["validation"],
-        compute_loss_func=_monot5_loss,
+        compute_loss_func=_pointce_loss,
     )
     trainer.train()
 
@@ -124,14 +119,12 @@ def _predict_candidates(
     tokenizer: T5TokenizerFast,
     model: T5ForConditionalGeneration,
     batch_size: int,
-    true_token: str,
-    false_token: str,
+    output_token: str
 ) -> list[float]:
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = model.to(device)
 
-    true_token_id = tokenizer.vocab[true_token]
-    false_token_id = tokenizer.vocab[false_token]
+    output_token_id = tokenizer.vocab[output_token]
     pad_token_id = tokenizer.pad_token_id
 
     scores = []
@@ -144,22 +137,21 @@ def _predict_candidates(
             ).to(device),
             **{k: v.to(device) for k, v in tokenized.items()}
         )
-        logits = outputs["logits"].squeeze(dim=1)[:, [true_token_id, false_token_id]]
-        probas = F.softmax(logits, dim=-1)[:, 0].flatten().cpu().tolist()
+        logits = outputs["logits"].squeeze(dim=1)[:, output_token_id]
+        probas = F.sigmoid(logits).flatten().cpu().tolist()
         scores.extend(probas)
 
     return scores
 
 
-def rerank_monot5(
+def rerank_rankt5(
     candidates: dict[tuple[str, str], list[str]],
     graph: BaseGraph,
     base_model_name: str,
     t5_model_name: str,
     batch_size: int,
     cache_dir: str,
-    true_token: str = "▁true",
-    false_token: str = "▁false",
+    output_token: str = "<extra_id_10>",
     prompt_template: str = "Head: {} Relation: {} Tail: {} Relevant:",
     use_entity_names: bool = False
 ) -> dict[tuple[str, str], list[str]]:
@@ -185,8 +177,7 @@ def rerank_monot5(
             tokenizer=tokenizer,
             model=model,
             batch_size=batch_size,
-            true_token=true_token,
-            false_token=false_token
+            output_token=output_token,
         )
         for (head, relation), candidate_prompts in tqdm(all_prompts.items())
     }

@@ -76,6 +76,8 @@ def train_monot5(
         per_device_eval_batch_size=batch_size,
         report_to=report_to,
         remove_unused_columns=False,
+        save_total_limit=3,
+        load_best_model_at_end=True,
         **kwargs,
     )
     trainer = Trainer(

@@ -45,7 +45,7 @@ def train_rankt5(
     ) -> torch.Tensor:
         logits = outputs["logits"].squeeze(dim=1)[:, output_token_id]
         loss_fn = nn.BCEWithLogitsLoss()
-        return loss_fn(logits, labels.to(torch.long))
+        return loss_fn(logits, labels.float())
 
     def _collate_fn(features: list[dict[str, Any]]) -> dict[str, Any]:
         texts = [row["text"] for row in features]

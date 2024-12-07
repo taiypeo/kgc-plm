@@ -11,6 +11,7 @@ from transformers import (
     T5TokenizerFast,
     Trainer,
     TrainingArguments,
+    DataCollatorWithPadding,
 )
 from transformers.utils import ModelOutput
 from tqdm import tqdm
@@ -48,30 +49,6 @@ def train_rankt5(
     report_to: str = "none",
     **kwargs,
 ) -> T5ForConditionalGeneration:
-    tokenizer = T5TokenizerFast.from_pretrained(t5_model_name, cache_dir=cache_dir)
-
-    output_token_id = tokenizer.vocab[output_token]
-    pad_token_id = tokenizer.pad_token_id
-
-    def _pointce_loss(
-        outputs: ModelOutput, labels: torch.Tensor, **kwargs
-    ) -> torch.Tensor:
-        logits = outputs["logits"].squeeze(dim=1)[:, output_token_id]
-        loss_fn = nn.BCEWithLogitsLoss()
-        return loss_fn(logits, labels.float())
-
-    def _collate_fn(features: list[dict[str, Any]]) -> dict[str, Any]:
-        texts = [row["text"] for row in features]
-        labels = [row["label"] for row in features]
-        tokenized = tokenizer(texts, padding=True, return_tensors="pt")
-        return {
-            "labels": torch.Tensor(labels).to(torch.long),
-            "decoder_input_ids": torch.full(
-                (tokenized["input_ids"].size(0), 1), pad_token_id
-            ),
-            **tokenized,
-        }
-
     args = TrainingArguments(
         output_dir=output_dir,
         do_train=True,
@@ -89,7 +66,30 @@ def train_rankt5(
         **kwargs,
     )
 
+    tokenizer = T5TokenizerFast.from_pretrained(t5_model_name, cache_dir=cache_dir)
     if mode == RankT5Mode.PAPER_ENCODER_DECODER:
+        output_token_id = tokenizer.vocab[output_token]
+        pad_token_id = tokenizer.pad_token_id
+
+        def _pointce_loss(
+            outputs: ModelOutput, labels: torch.Tensor, **kwargs
+        ) -> torch.Tensor:
+            logits = outputs["logits"].squeeze(dim=1)[:, output_token_id]
+            loss_fn = nn.BCEWithLogitsLoss()
+            return loss_fn(logits, labels.float())
+
+        def _collate_fn(features: list[dict[str, Any]]) -> dict[str, Any]:
+            texts = [row["text"] for row in features]
+            labels = [row["label"] for row in features]
+            tokenized = tokenizer(texts, padding=True, return_tensors="pt")
+            return {
+                "labels": torch.Tensor(labels).to(torch.long),
+                "decoder_input_ids": torch.full(
+                    (tokenized["input_ids"].size(0), 1), pad_token_id
+                ),
+                **tokenized,
+            }
+
         model = T5ForConditionalGeneration.from_pretrained(
             t5_model_name, cache_dir=cache_dir
         )
@@ -102,15 +102,19 @@ def train_rankt5(
             compute_loss_func=_pointce_loss,
         )
     else:
+        def tokenize_fn(sample: dict[str, Any]) -> dict[str, Any]:
+            return tokenizer(sample["text"], return_tensors="pt")
+
         model = T5ForSequenceClassification.from_pretrained(
             t5_model_name, cache_dir=cache_dir
         )
         trainer = Trainer(
             model=model,
             args=args,
+            data_collator=DataCollatorWithPadding(tokenizer),
             processing_class=tokenizer,
-            train_dataset=dataset["train"],
-            eval_dataset=dataset["validation"],
+            train_dataset=dataset["train"].map(tokenize_fn).remove_columns(["text"]),
+            eval_dataset=dataset["validation"].map(tokenize_fn).remove_columns(["text"]),
         )
     trainer.train()
 

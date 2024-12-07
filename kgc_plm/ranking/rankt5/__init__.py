@@ -103,7 +103,7 @@ def train_rankt5(
         )
     else:
         def tokenize_fn(sample: dict[str, Any]) -> dict[str, Any]:
-            return tokenizer(sample["text"], return_tensors="pt")
+            return tokenizer(sample["text"])
 
         model = T5ForSequenceClassification.from_pretrained(
             t5_model_name, cache_dir=cache_dir

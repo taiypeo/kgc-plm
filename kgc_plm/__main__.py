@@ -9,7 +9,7 @@ from datasets import load_from_disk
 from .filtration import filter_candidates_sbert, filter_candidates_tucker, train_tucker
 from .graphs import construct_dataset, get_graph
 from .metrics import calculate_metrics
-from .ranking import train_monot5, rerank_monot5, train_rankt5, rerank_rankt5
+from .ranking import train_monot5, rerank_monot5, train_rankt5, rerank_rankt5, RankT5Mode
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -373,6 +373,7 @@ def _rerank_monot5(
     "--dataset-path",
     help="Path for the dataset that was previously constructed with construct-dataset",
 )
+@click.option("--mode", default="paper_encoder_decoder", help="Training mode")
 @click.option("--output-token", default="<extra_id_10>", help="Output token for logits")
 @click.option("--train-epochs", default=3, help="Number of training epochs")
 @click.option(
@@ -390,6 +391,7 @@ def _rerank_monot5(
 def _train_rankt5(
     model_name: str,
     dataset_path: str,
+    mode: str,
     output_token: str,
     train_epochs: int,
     eval_steps: int,
@@ -404,6 +406,7 @@ def _train_rankt5(
         t5_model_name=model_name,
         dataset=dataset,
         cache_dir=cache_dir,
+        mode=RankT5Mode.from_str(mode),
         output_dir=output_dir,
         output_token=output_token,
         train_epochs=train_epochs,

@@ -1,4 +1,5 @@
-from typing import Any
+import enum
+from typing import Any, Self
 
 import torch
 import torch.nn.functional as F
@@ -6,6 +7,7 @@ from datasets import DatasetDict
 from torch import nn
 from transformers import (
     T5ForConditionalGeneration,
+    T5ForSequenceClassification,
     T5TokenizerFast,
     Trainer,
     TrainingArguments,
@@ -19,11 +21,25 @@ from ...graphs import BaseGraph
 # https://arxiv.org/pdf/2210.10634
 
 
+class RankT5Mode(enum.Enum):
+    PAPER_ENCODER_DECODER = 1
+    HUGGINGFACE_ENCODER_DECODER = 2
+
+    @staticmethod
+    def from_str(s: str) -> Self:
+        if s.lower() == "paper_encoder_decoder":
+            return RankT5Mode.PAPER_ENCODER_DECODER
+        if s.lower() == "huggingface_encoder_decoder":
+            return RankT5Mode.HUGGINGFACE_ENCODER_DECODER
+        raise NotImplementedError
+
+
 def train_rankt5(
     t5_model_name: str,
     dataset: DatasetDict,
     cache_dir: str,
     output_dir: str,
+    mode: RankT5Mode = RankT5Mode.PAPER_ENCODER_DECODER,
     output_token: str = "<extra_id_10>",
     train_epochs: int = 3,
     eval_steps: int = 10_000,
@@ -33,9 +49,6 @@ def train_rankt5(
     **kwargs,
 ) -> T5ForConditionalGeneration:
     tokenizer = T5TokenizerFast.from_pretrained(t5_model_name, cache_dir=cache_dir)
-    model = T5ForConditionalGeneration.from_pretrained(
-        t5_model_name, cache_dir=cache_dir
-    )
 
     output_token_id = tokenizer.vocab[output_token]
     pad_token_id = tokenizer.pad_token_id
@@ -75,14 +88,30 @@ def train_rankt5(
         load_best_model_at_end=True,
         **kwargs,
     )
-    trainer = Trainer(
-        model=model,
-        args=args,
-        data_collator=_collate_fn,
-        train_dataset=dataset["train"],
-        eval_dataset=dataset["validation"],
-        compute_loss_func=_pointce_loss,
-    )
+
+    if mode == RankT5Mode.PAPER_ENCODER_DECODER:
+        model = T5ForConditionalGeneration.from_pretrained(
+            t5_model_name, cache_dir=cache_dir
+        )
+        trainer = Trainer(
+            model=model,
+            args=args,
+            data_collator=_collate_fn,
+            train_dataset=dataset["train"],
+            eval_dataset=dataset["validation"],
+            compute_loss_func=_pointce_loss,
+        )
+    else:
+        model = T5ForSequenceClassification.from_pretrained(
+            t5_model_name, cache_dir=cache_dir
+        )
+        trainer = Trainer(
+            model=model,
+            args=args,
+            processing_class=tokenizer,
+            train_dataset=dataset["train"],
+            eval_dataset=dataset["validation"],
+        )
     trainer.train()
 
 

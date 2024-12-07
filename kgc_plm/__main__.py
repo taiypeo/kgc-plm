@@ -427,7 +427,7 @@ def _train_rankt5(
 )
 @click.option(
     "--prompt-template",
-    default="Head: {} Relation: {} Tail: {} Relevant:",
+    default="Head: {} Relation: {} Tail: {}",
     help="Prompt template for T5",
 )
 @click.option(
@@ -437,6 +437,7 @@ def _train_rankt5(
 )
 @click.option("--base-model-name", help="Hugging Face T5 base model name")
 @click.option("--model-name", help="Trained monoT5 model name")
+@click.option("--mode", default="paper_encoder_decoder", help="Training mode")
 @click.option("--output-token", default="<extra_id_10>", help="Output token for logits")
 @click.option("--batch-size", default=8, help="Batch size")
 @click.option("--cache-dir", default="cache", help="Cache directory path")
@@ -449,6 +450,7 @@ def _rerank_rankt5(
     prompt_template: str,
     base_model_name: str,
     model_name: str,
+    mode: str,
     output_token: str,
     batch_size: int,
     cache_dir: str,
@@ -471,6 +473,7 @@ def _rerank_rankt5(
         t5_model_name=model_name,
         batch_size=batch_size,
         cache_dir=cache_dir,
+        mode=RankT5Mode.from_str(mode),
         output_token=output_token,
         prompt_template=prompt_template,
         use_entity_names=use_entity_names,

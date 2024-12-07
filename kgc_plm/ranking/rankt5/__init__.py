@@ -101,7 +101,7 @@ def train_rankt5(
             eval_dataset=dataset["validation"],
             compute_loss_func=_pointce_loss,
         )
-    else:
+    elif mode == RankT5Mode.HUGGINGFACE_ENCODER_DECODER:
         def tokenize_fn(sample: dict[str, Any]) -> dict[str, Any]:
             return tokenizer(sample["text"])
 
@@ -154,6 +154,7 @@ def _predict_candidates(
     tokenizer: T5TokenizerFast,
     model: T5ForConditionalGeneration,
     batch_size: int,
+    mode: RankT5Mode,
     output_token: str
 ) -> list[float]:
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -166,14 +167,21 @@ def _predict_candidates(
     for batch_start in range(0, len(candidate_prompts), batch_size):
         batch_prompts = candidate_prompts[batch_start:batch_start+batch_size]
         tokenized = tokenizer(batch_prompts, padding=True, return_tensors="pt")
-        outputs = model(
-            decoder_input_ids=torch.full(
-                (tokenized["input_ids"].size(0), 1), pad_token_id
-            ).to(device),
-            **{k: v.to(device) for k, v in tokenized.items()}
-        )
-        logits = outputs["logits"].squeeze(dim=1)[:, output_token_id]
-        probas = F.sigmoid(logits).flatten().cpu().tolist()
+
+        if mode == RankT5Mode.PAPER_ENCODER_DECODER:
+            outputs = model(
+                decoder_input_ids=torch.full(
+                    (tokenized["input_ids"].size(0), 1), pad_token_id
+                ).to(device),
+                **{k: v.to(device) for k, v in tokenized.items()}
+            )
+            logits = outputs["logits"].squeeze(dim=1)[:, output_token_id]
+            probas = F.sigmoid(logits).flatten().cpu().tolist()
+        elif mode == RankT5Mode.HUGGINGFACE_ENCODER_DECODER:
+            outputs = model(**{k: v.to(device) for k, v in tokenized.items()})
+            logits = outputs["logits"]
+            probas = F.softmax(logits, dim=-1)[:, -1].flatten().cpu().tolist()
+
         scores.extend(probas)
 
     return scores
@@ -186,8 +194,9 @@ def rerank_rankt5(
     t5_model_name: str,
     batch_size: int,
     cache_dir: str,
+    mode: RankT5Mode = RankT5Mode.PAPER_ENCODER_DECODER,
     output_token: str = "<extra_id_10>",
-    prompt_template: str = "Head: {} Relation: {} Tail: {} Relevant:",
+    prompt_template: str = "Head: {} Relation: {} Tail: {}",
     use_entity_names: bool = False
 ) -> dict[tuple[str, str], list[str]]:
     tokenizer = T5TokenizerFast.from_pretrained(base_model_name, cache_dir=cache_dir)
@@ -212,6 +221,7 @@ def rerank_rankt5(
             tokenizer=tokenizer,
             model=model,
             batch_size=batch_size,
+            mode=mode,
             output_token=output_token,
         )
         for (head, relation), candidate_prompts in tqdm(all_prompts.items())

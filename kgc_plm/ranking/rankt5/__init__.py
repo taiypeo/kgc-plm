@@ -48,7 +48,7 @@ def train_rankt5(
     batch_size: int = 8,
     report_to: str = "none",
     **kwargs,
-) -> T5ForConditionalGeneration:
+) -> T5ForConditionalGeneration | T5ForSequenceClassification:
     args = TrainingArguments(
         output_dir=output_dir,
         do_train=True,
@@ -152,7 +152,7 @@ def _construct_prompts(
 def _predict_candidates(
     candidate_prompts: list[str],
     tokenizer: T5TokenizerFast,
-    model: T5ForConditionalGeneration,
+    model: T5ForConditionalGeneration | T5ForSequenceClassification,
     batch_size: int,
     mode: RankT5Mode,
     output_token: str

@@ -200,9 +200,16 @@ def rerank_rankt5(
     use_entity_names: bool = False
 ) -> dict[tuple[str, str], list[str]]:
     tokenizer = T5TokenizerFast.from_pretrained(base_model_name, cache_dir=cache_dir)
-    model = T5ForConditionalGeneration.from_pretrained(
-        t5_model_name, cache_dir=cache_dir
-    )
+    if mode == RankT5Mode.PAPER_ENCODER_DECODER:
+        model = T5ForConditionalGeneration.from_pretrained(
+            t5_model_name, cache_dir=cache_dir
+        )
+    elif mode == RankT5Mode.HUGGINGFACE_ENCODER_DECODER:
+        model = T5ForSequenceClassification.from_pretrained(
+            t5_model_name, cache_dir=cache_dir
+        )
+    else:
+        raise NotImplementedError
 
     all_prompts = {
         (head, relation): _construct_prompts(

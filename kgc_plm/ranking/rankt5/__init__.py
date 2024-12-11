@@ -16,6 +16,7 @@ from transformers import (
 from transformers.utils import ModelOutput
 from tqdm import tqdm
 
+from .encoder import RankT5Encoder
 from ...graphs import BaseGraph
 
 
@@ -25,6 +26,7 @@ from ...graphs import BaseGraph
 class RankT5Mode(enum.Enum):
     PAPER_ENCODER_DECODER = 1
     HUGGINGFACE_ENCODER_DECODER = 2
+    PAPER_ENCODER = 3
 
     @staticmethod
     def from_str(s: str) -> Self:
@@ -48,7 +50,7 @@ def train_rankt5(
     batch_size: int = 8,
     report_to: str = "none",
     **kwargs,
-) -> T5ForConditionalGeneration | T5ForSequenceClassification:
+) -> T5ForConditionalGeneration | T5ForSequenceClassification | RankT5Encoder:
     args = TrainingArguments(
         output_dir=output_dir,
         do_train=True,
@@ -116,6 +118,23 @@ def train_rankt5(
             train_dataset=dataset["train"].map(tokenize_fn).remove_columns(["text"]),
             eval_dataset=dataset["validation"].map(tokenize_fn).remove_columns(["text"]),
         )
+    elif mode == RankT5Mode.PAPER_ENCODER:
+        def tokenize_fn(sample: dict[str, Any]) -> dict[str, Any]:
+            return tokenizer(sample["text"])
+
+        model = RankT5Encoder.from_pretrained(
+            t5_model_name, cache_dir=cache_dir
+        )
+        trainer = Trainer(
+            model=model,
+            args=args,
+            data_collator=DataCollatorWithPadding(tokenizer),
+            processing_class=tokenizer,
+            train_dataset=dataset["train"].map(tokenize_fn).remove_columns(["text"]),
+            eval_dataset=dataset["validation"].map(tokenize_fn).remove_columns(["text"]),
+        )
+    else:
+        raise NotImplementedError
     trainer.train()
 
 
@@ -152,7 +171,7 @@ def _construct_prompts(
 def _predict_candidates(
     candidate_prompts: list[str],
     tokenizer: T5TokenizerFast,
-    model: T5ForConditionalGeneration | T5ForSequenceClassification,
+    model: T5ForConditionalGeneration | T5ForSequenceClassification | RankT5Encoder,
     batch_size: int,
     mode: RankT5Mode,
     output_token: str
@@ -181,6 +200,12 @@ def _predict_candidates(
             outputs = model(**{k: v.to(device) for k, v in tokenized.items()})
             logits = outputs["logits"]
             probas = F.softmax(logits, dim=-1)[:, -1].flatten().cpu().tolist()
+        elif mode == RankT5Mode.PAPER_ENCODER:
+            outputs = model(**{k: v.to(device) for k, v in tokenized.items()})
+            logits = outputs["logits"]
+            probas = F.sigmoid(logits).flatten().cpu().tolist()
+        else:
+            raise NotImplementedError
 
         scores.extend(probas)
 
@@ -206,6 +231,10 @@ def rerank_rankt5(
         )
     elif mode == RankT5Mode.HUGGINGFACE_ENCODER_DECODER:
         model = T5ForSequenceClassification.from_pretrained(
+            t5_model_name, cache_dir=cache_dir
+        )
+    elif mode == RankT5Mode.PAPER_ENCODER:
+        model = RankT5Encoder.from_pretrained(
             t5_model_name, cache_dir=cache_dir
         )
     else:

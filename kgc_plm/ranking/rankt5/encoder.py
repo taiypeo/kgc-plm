@@ -47,7 +47,7 @@ class RankT5Encoder(T5PreTrainedModel):
         loss = None
         if labels is not None:
             loss_fct = nn.BCEWithLogitsLoss()
-            loss = loss_fct(logits, labels.squeeze())
+            loss = loss_fct(logits, labels.squeeze().float())
 
         if not return_dict:
             output = (logits, outputs[2:-1])

@@ -34,6 +34,8 @@ class RankT5Mode(enum.Enum):
             return RankT5Mode.PAPER_ENCODER_DECODER
         if s.lower() == "huggingface_encoder_decoder":
             return RankT5Mode.HUGGINGFACE_ENCODER_DECODER
+        if s.lower() == "paper_encoder":
+            return RankT5Mode.PAPER_ENCODER
         raise NotImplementedError
 
 

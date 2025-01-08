@@ -10,11 +10,17 @@ logger = logging.getLogger(__name__)
 class WN18RR(BaseGraph):
     def __init__(
         self,
+        data_path: str = "data/wn18rr",
         add_reverse_relations: bool = False,
         cache_dir: str = "cache",
+        **kwargs,
     ) -> None:
         logging.info("Loading the dataset triplets")
-        self._load_triplets_dataset(add_reverse_relations=add_reverse_relations, cache_dir=cache_dir)
+        self._load_triplets_dataset(
+            data_path=data_path,
+            add_reverse_relations=add_reverse_relations,
+            cache_dir=cache_dir
+        )
         logging.info("Finished loading the dataset!")
 
     @property
@@ -37,13 +43,15 @@ class WN18RR(BaseGraph):
     def relations(self) -> list[str]:
         return self._relations
 
-    def _load_triplets_dataset(self, add_reverse_relations: bool, cache_dir: str) -> None:
+    def _load_triplets_dataset(
+            self, data_path: str, add_reverse_relations: bool, cache_dir: str
+        ) -> None:
         entity_names = set()
         relation_names = set()
 
         dataset = {}
         for split_filename in ["train", "valid", "test"]:
-            with open("data/" + split_filename + ".txt") as file:
+            with open(data_path + "/" + split_filename + ".txt") as file:
                 def _generate_split():
                     for line in file:
                         head, relation, tail = line.strip().split("\t")

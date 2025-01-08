@@ -14,6 +14,7 @@ class FB15K_237(BaseGraph):
         batch_size: int = 1000,
         add_reverse_relations: bool = False,
         cache_dir: str = "cache",
+        **kwargs,
     ) -> None:
         logging.info("Loading the dataset triplets")
         self._triplets_dataset = FB15K_237._load_triplets_dataset(

@@ -33,7 +33,7 @@ class WN18RR(BaseGraph):
 
     @property
     def entity_ids(self) -> list[str]:
-        return self._entityids
+        return self._entity_names
 
     @property
     def texts(self) -> list[str]:
@@ -86,5 +86,4 @@ class WN18RR(BaseGraph):
         self._entity_names = sorted(entity_names)
         self._relations = sorted(relation_names)
         self._triplets_dataset = DatasetDict(dataset)
-        self._entityids = [str(i) for i in range(len(self._entity_names))]
-        self._entityid_to_name = {str(i): entity_name for i, entity_name in enumerate(self._entity_names)}
+        self._entityid_to_name = {entity_name: entity_name for entity_name in self._entity_names}

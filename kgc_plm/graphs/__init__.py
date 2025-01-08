@@ -5,6 +5,7 @@ from datasets import Dataset, DatasetDict
 
 from .base import BaseGraph
 from .fb15k_237 import FB15K_237
+from .wn18rr import WN18RR
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,11 @@ def get_graph(
     if graph_name == "fb15k_237":
         return FB15K_237(
             batch_size=batch_size,
+            cache_dir=cache_dir,
+            **kwargs,
+        )
+    elif graph_name == "wn18rr":
+        return WN18RR(
             cache_dir=cache_dir,
             **kwargs,
         )

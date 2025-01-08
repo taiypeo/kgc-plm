@@ -2,7 +2,7 @@ import logging
 
 from datasets import Dataset, DatasetDict
 
-from ..base import BaseGraph
+from .base import BaseGraph
 
 logger = logging.getLogger(__name__)
 

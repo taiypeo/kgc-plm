@@ -10,10 +10,11 @@ logger = logging.getLogger(__name__)
 class WN18RR(BaseGraph):
     def __init__(
         self,
+        add_reverse_relations: bool = False,
         cache_dir: str = "cache",
     ) -> None:
         logging.info("Loading the dataset triplets")
-        self._load_triplets_dataset(cache_dir=cache_dir)
+        self._load_triplets_dataset(add_reverse_relations=add_reverse_relations, cache_dir=cache_dir)
         logging.info("Finished loading the dataset!")
 
     @property
@@ -36,7 +37,7 @@ class WN18RR(BaseGraph):
     def relations(self) -> list[str]:
         return self._relations
 
-    def _load_triplets_dataset(self, cache_dir: str) -> None:
+    def _load_triplets_dataset(self, add_reverse_relations: bool, cache_dir: str) -> None:
         entity_names = set()
         relation_names = set()
 
@@ -45,17 +46,23 @@ class WN18RR(BaseGraph):
             with open("data/" + split_filename + ".txt") as file:
                 def _generate_split():
                     for line in file:
-                        split_row = {}
                         head, relation, tail = line.strip().split("\t")
-                        split_row["head"].append(head)
-                        split_row["relation"].append(relation)
-                        split_row["tail"].append(tail)
-
                         entity_names.add(head)
                         entity_names.add(tail)
                         relation_names.add(relation)
 
-                        yield split_row
+                        yield {
+                            "head": head,
+                            "relation": relation,
+                            "tail": tail,
+                        }
+
+                        if add_reverse_relations:
+                            yield {
+                                "head": tail,
+                                "relation": relation,
+                                "tail": head,
+                            }
 
                 split = Dataset.from_generator(_generate_split, cache_dir=cache_dir)
                 dataset[split_filename if split_filename != "valid" else "validation"] = split

@@ -55,6 +55,14 @@ class WN18RR(BaseGraph):
                 def _generate_split():
                     for line in file:
                         head, relation, tail = line.strip().split("\t")
+                        if head[0] == "'":
+                            head = head[1:]
+                        if tail[0] == "'":
+                            tail = tail[1:]
+                        head = head.strip()
+                        relation = relation.strip()
+                        tail = tail.strip()
+
                         entity_names.add(head)
                         entity_names.add(tail)
                         relation_names.add(relation)

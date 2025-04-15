@@ -20,6 +20,14 @@ def get_graph(
         return FB15K_237(
             batch_size=batch_size,
             cache_dir=cache_dir,
+            use_names_as_texts=False,
+            **kwargs,
+        )
+    elif graph_name == "fb15k_237_name":
+        return FB15K_237(
+            batch_size=batch_size,
+            cache_dir=cache_dir,
+            use_names_as_texts=True,
             **kwargs,
         )
     elif graph_name == "wn18rr":

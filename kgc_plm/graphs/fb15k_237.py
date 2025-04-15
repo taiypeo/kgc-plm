@@ -14,6 +14,7 @@ class FB15K_237(BaseGraph):
         batch_size: int = 1000,
         add_reverse_relations: bool = False,
         cache_dir: str = "cache",
+        use_names_as_texts: bool = False,
         **kwargs,
     ) -> None:
         logging.info("Loading the dataset triplets")
@@ -39,11 +40,16 @@ class FB15K_237(BaseGraph):
             self._entityids.append(entity_id)
             self._descriptions.append(description)
 
+        self._names = []
+        for entity_id in self._entityids:
+            self._names.append(self._entityid_to_name[entity_id])
+
         all_relations = set()
         for split_name in self._triplets_dataset:
             all_relations |= set(self._triplets_dataset[split_name]["relation"])
 
         self._relations = sorted(all_relations)
+        self._use_names_as_texts = use_names_as_texts
         logging.info("Finished loading the dataset!")
 
     @property
@@ -52,6 +58,9 @@ class FB15K_237(BaseGraph):
 
     @property
     def entity_id_to_text(self) -> dict[str, str]:
+        if self._use_names_as_texts:
+            return self._entityid_to_name
+
         # Descriptions seem to already contain the entity names
         # in some shape or form, so we can try using only them.
         return self._entityid_to_description
@@ -62,6 +71,9 @@ class FB15K_237(BaseGraph):
 
     @property
     def texts(self) -> list[str]:
+        if self._use_names_as_texts:
+            return self._names
+
         return self._descriptions
 
     @property

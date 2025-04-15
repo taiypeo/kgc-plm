@@ -212,6 +212,7 @@ python-dateutil=2.8.2=pyhd3eb1b0_0
 pytz=2024.2=pypi_0
 pyyaml=6.0.2=pypi_0
 pyzmq=25.1.2=py311h6a678d5_0
+rank-bm25=0.2.2=pypi_0
 readline=8.2=h5eee18b_0
 regex=2024.9.11=pypi_0
 requests=2.32.3=pypi_0

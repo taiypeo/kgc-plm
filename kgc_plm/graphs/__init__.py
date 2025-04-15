@@ -33,6 +33,13 @@ def get_graph(
     elif graph_name == "wn18rr":
         return WN18RR(
             cache_dir=cache_dir,
+            use_freebase_descriptions_as_texts=False,
+            **kwargs,
+        )
+    elif graph_name == "wn18rr_freebase":
+        return WN18RR(
+            cache_dir=cache_dir,
+            use_freebase_descriptions_as_texts=True,
             **kwargs,
         )
 

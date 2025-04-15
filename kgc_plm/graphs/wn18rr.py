@@ -1,10 +1,18 @@
 import logging
+import re
 
 from datasets import Dataset, DatasetDict
+from huggingface_hub import hf_hub_download
+from rank_bm25 import BM25Okapi
 
 from .base import BaseGraph
 
 logger = logging.getLogger(__name__)
+pattern = re.compile(r"[\W_]+")
+
+
+def tokenizer(doc: str) -> list[str]:
+    return [pattern.sub("", token.lower()) for token in doc.split()]
 
 
 class WN18RR(BaseGraph):
@@ -12,8 +20,15 @@ class WN18RR(BaseGraph):
         self,
         data_path: str = "data/wn18rr",
         add_reverse_relations: bool = False,
+        cache_dir: str = "cache",
+        use_freebase_descriptions_as_texts: bool = False,
         **kwargs,
     ) -> None:
+        logging.info("Loading the Freebase descriptions")
+        self._descriptions = WN18RR._load_freebase_descriptions(cache_dir)
+        self._bm25 = BM25Okapi(self._descriptions, tokenizer=tokenizer)
+        self._use_freebase_descriptions_as_texts = use_freebase_descriptions_as_texts
+
         logging.info("Loading the dataset triplets")
         self._load_triplets_dataset(
             data_path=data_path,
@@ -27,7 +42,7 @@ class WN18RR(BaseGraph):
 
     @property
     def entity_id_to_text(self) -> dict[str, str]:
-        return {entity_name: entity_name for entity_name in self._entity_names}
+        return self._entity_name_to_description
 
     @property
     def entity_ids(self) -> list[str]:
@@ -35,7 +50,7 @@ class WN18RR(BaseGraph):
 
     @property
     def texts(self) -> list[str]:
-        return self._entity_names
+        return self._descriptions
 
     @property
     def relations(self) -> list[str]:
@@ -44,7 +59,7 @@ class WN18RR(BaseGraph):
     def _load_triplets_dataset(
             self, data_path: str, add_reverse_relations: bool
         ) -> None:
-        entity_names = set()
+        self._entity_name_to_description = {}
         relation_names = set()
 
         dataset = {}
@@ -65,9 +80,15 @@ class WN18RR(BaseGraph):
                     relation = relation.strip()
                     tail = tail.strip()
 
-                    entity_names.add(head)
-                    entity_names.add(tail)
                     relation_names.add(relation)
+                    if self._use_freebase_descriptions_as_texts:
+                        head_query = tokenizer(head.split(".")[0])
+                        tail_query = tokenizer(tail.split(".")[0])
+                        self._entity_name_to_description[head] = self._bm25.get_top_n(head_query, self._descriptions, n=1)[0]
+                        self._entity_name_to_description[tail] = self._bm25.get_top_n(tail_query, self._descriptions, n=1)[0]
+                    else:
+                        self._entity_name_to_description[head] = head
+                        self._entity_name_to_description[tail] = tail
 
                     split["head"].append(head)
                     split["relation"].append(relation)
@@ -81,6 +102,28 @@ class WN18RR(BaseGraph):
             split = Dataset.from_dict(split)
             dataset[split_filename if split_filename != "valid" else "validation"] = split
 
-        self._entity_names = sorted(entity_names)
+        self._entity_names = []
+        self._descriptions = []
+        for entity_name, description in sorted(self._entity_name_to_description.items()):
+            self._entity_names.append(entity_name)
+            self._descriptions.append(description)
+
         self._relations = sorted(relation_names)
         self._triplets_dataset = DatasetDict(dataset)
+
+    @staticmethod
+    def _load_freebase_descriptions(cache_dir: str) -> dict[str, str]:
+        mid2description_path = hf_hub_download(
+            repo_id="KGraph/FB15k-237",
+            filename="data/FB15k_mid2description.txt",
+            repo_type="dataset",
+            cache_dir=cache_dir,
+        )
+        descriptions = []
+        with open(mid2description_path) as file:
+            for line in file:
+                _, entity_description = line.strip().split("\t")
+                entity_description = entity_description[1 : -len('"@en')]
+                descriptions.append(entity_description)
+
+        return descriptions

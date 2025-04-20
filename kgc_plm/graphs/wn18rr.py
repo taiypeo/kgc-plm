@@ -140,7 +140,7 @@ class WN18RR(BaseGraph):
     @staticmethod
     def _load_wordnet_descriptions(cache_dir: str) -> list[str]:
         def gen_text(example):
-            example["text"] = (example["Word"] or "") + " " + (example["Definition"] or "")
+            example["text"] = (example["Word"] or "null") + " " + example["Definition"]
             return example
 
         dataset = load_dataset("marksverdhei/wordnet-definitions-en-2021", cache_dir=cache_dir)
